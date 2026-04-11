@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lms.learning.dto.SubmitAnswerRequest;
 import com.lms.learning.dto.TaskResultResponse;
 import com.lms.learning.dto.ValidateResultRequest;
@@ -27,7 +28,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -40,18 +40,19 @@ class LearningServiceTest {
     @Mock AccessCheckService accessCheckService;
     @Mock KeyBasedChecker keyBasedChecker;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private TaskResultMapper mapper;
     private LearningService learningService;
 
     @BeforeEach
     void setUp() {
-        mapper = new TaskResultMapper();
+        mapper = new TaskResultMapper(objectMapper);
         learningService = new LearningService(taskRepository, taskResultRepository,
-                checkerFactory, accessCheckService, mapper);
+                checkerFactory, accessCheckService, objectMapper, mapper);
     }
 
     @Test
-    void submitAnswer_newResult_savesAndReturns() {
+    void submitAnswer_newResult_savesAndReturns() throws Exception {
         Task task = fillBlanksTask();
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
         doNothing().when(accessCheckService).assertStudentHasAccess(10L, 1L);
@@ -64,7 +65,7 @@ class LearningServiceTest {
         when(taskResultRepository.save(any())).thenReturn(saved);
 
         TaskResultResponse response = learningService.submitAnswer(1L, 10L,
-                new SubmitAnswerRequest("[\"apple\"]"));
+                new SubmitAnswerRequest(objectMapper.readTree("[\"apple\"]")));
 
         assertThat(response.score()).isEqualByComparingTo(BigDecimal.valueOf(100));
         assertThat(response.status()).isEqualTo(ResultStatus.CHECKED);
@@ -72,36 +73,39 @@ class LearningServiceTest {
     }
 
     @Test
-    void submitAnswer_taskNotFound_throws404() {
+    void submitAnswer_taskNotFound_throws404() throws Exception {
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                learningService.submitAnswer(99L, 10L, new SubmitAnswerRequest("answer")))
+                learningService.submitAnswer(99L, 10L,
+                        new SubmitAnswerRequest(objectMapper.readTree("[]"))))
                 .isInstanceOf(ApiBusinessException.class)
                 .hasMessageContaining("not found");
     }
 
     @Test
-    void submitAnswer_noAccess_throws403() {
+    void submitAnswer_noAccess_throws403() throws Exception {
         when(taskRepository.findById(1L)).thenReturn(Optional.of(fillBlanksTask()));
         doThrow(ApiBusinessException.forbidden())
                 .when(accessCheckService).assertStudentHasAccess(10L, 1L);
 
         assertThatThrownBy(() ->
-                learningService.submitAnswer(1L, 10L, new SubmitAnswerRequest("answer")))
+                learningService.submitAnswer(1L, 10L,
+                        new SubmitAnswerRequest(objectMapper.readTree("[]"))))
                 .isInstanceOf(ApiBusinessException.class)
                 .hasMessageContaining("Access denied");
     }
 
     @Test
-    void submitAnswer_alreadyValidated_throws409() {
+    void submitAnswer_alreadyValidated_throws409() throws Exception {
         when(taskRepository.findById(1L)).thenReturn(Optional.of(fillBlanksTask()));
         doNothing().when(accessCheckService).assertStudentHasAccess(10L, 1L);
         when(taskResultRepository.findByStudentIdAndTaskId(10L, 1L))
                 .thenReturn(Optional.of(resultWith(ResultStatus.VALIDATED_BY_TEACHER, BigDecimal.valueOf(90))));
 
         assertThatThrownBy(() ->
-                learningService.submitAnswer(1L, 10L, new SubmitAnswerRequest("answer")))
+                learningService.submitAnswer(1L, 10L,
+                        new SubmitAnswerRequest(objectMapper.readTree("[]"))))
                 .isInstanceOf(ApiBusinessException.class)
                 .hasMessageContaining("validated");
     }
@@ -135,7 +139,11 @@ class LearningServiceTest {
         r.setId(1L);
         r.setTaskId(1L);
         r.setStudentId(10L);
-        r.setAnswerContent("[\"apple\"]");
+        try {
+            r.setAnswerContent(objectMapper.readTree("[\"apple\"]"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         r.setScore(score);
         r.setAiFeedback("feedback");
         r.setStatus(status);

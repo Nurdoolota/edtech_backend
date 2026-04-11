@@ -4,18 +4,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.lms.learning.dto.ai.AiEvaluateRequest;
 import com.lms.learning.dto.ai.AiEvaluateResponse;
 import com.lms.learning.entity.Task;
 import com.lms.learning.entity.TaskType;
 import com.lms.learning.exception.ApiBusinessException;
 import java.math.BigDecimal;
 import java.util.Map;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClient.RequestBodySpec;
@@ -25,22 +25,12 @@ import org.springframework.web.client.RestClientException;
 
 class AiBasedCheckerTest {
 
-    private RestClient restClient;
-    private AiBasedChecker checker;
-
-    @BeforeEach
-    @SuppressWarnings("unchecked")
-    void setUp() {
-        restClient = mock(RestClient.class);
-        checker = new AiBasedChecker(restClient);
-    }
-
     @Test
-    @SuppressWarnings("unchecked")
     void check_textTask_returnsEvaluationResult() {
         AiEvaluateResponse aiResponse = new AiEvaluateResponse(
                 BigDecimal.valueOf(85), "Good answer.", "Accepted");
 
+        RestClient restClient = mock(RestClient.class);
         RequestBodyUriSpec uriSpec = mock(RequestBodyUriSpec.class);
         RequestBodySpec bodySpec = mock(RequestBodySpec.class);
         ResponseSpec responseSpec = mock(ResponseSpec.class);
@@ -48,10 +38,11 @@ class AiBasedCheckerTest {
         when(restClient.post()).thenReturn(uriSpec);
         when(uriSpec.uri(anyString())).thenReturn(bodySpec);
         when(bodySpec.contentType(any(MediaType.class))).thenReturn(bodySpec);
-        when(bodySpec.body(any())).thenReturn(bodySpec);
+        when(bodySpec.body(any(AiEvaluateRequest.class))).thenReturn(bodySpec);
         when(bodySpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.body(AiEvaluateResponse.class)).thenReturn(aiResponse);
+        when(responseSpec.body(eq(AiEvaluateResponse.class))).thenReturn(aiResponse);
 
+        AiBasedChecker checker = new AiBasedChecker(restClient);
         Task task = taskWith(TaskType.TEXT, Map.of("sourceText", "IoT article", "questions",
                 java.util.List.of("What is IoT?"), "level", "B2"));
 
@@ -62,17 +53,18 @@ class AiBasedCheckerTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void check_aiServiceDown_throwsServiceUnavailable() {
+        RestClient restClient = mock(RestClient.class);
         RequestBodyUriSpec uriSpec = mock(RequestBodyUriSpec.class);
         RequestBodySpec bodySpec = mock(RequestBodySpec.class);
 
         when(restClient.post()).thenReturn(uriSpec);
         when(uriSpec.uri(anyString())).thenReturn(bodySpec);
         when(bodySpec.contentType(any(MediaType.class))).thenReturn(bodySpec);
-        when(bodySpec.body(any())).thenReturn(bodySpec);
+        when(bodySpec.body(any(AiEvaluateRequest.class))).thenReturn(bodySpec);
         when(bodySpec.retrieve()).thenThrow(new RestClientException("connection refused"));
 
+        AiBasedChecker checker = new AiBasedChecker(restClient);
         Task task = taskWith(TaskType.TRANSLATION, Map.of(
                 "sourceText", "Some text", "instructions", "Translate"));
 

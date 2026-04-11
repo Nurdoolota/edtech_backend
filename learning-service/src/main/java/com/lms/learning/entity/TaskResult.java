@@ -1,5 +1,6 @@
 package com.lms.learning.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,7 +12,9 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "task_results")
@@ -27,8 +30,9 @@ public class TaskResult {
     @Column(name = "student_id", nullable = false)
     private Long studentId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "answer_content", columnDefinition = "jsonb", nullable = false)
-    private String answerContent;
+    private JsonNode answerContent;
 
     @Column(name = "ai_feedback")
     private String aiFeedback;
@@ -60,9 +64,9 @@ public class TaskResult {
 
     public void setStudentId(Long studentId) { this.studentId = studentId; }
 
-    public String getAnswerContent() { return answerContent; }
+    public JsonNode getAnswerContent() { return answerContent; }
 
-    public void setAnswerContent(String answerContent) { this.answerContent = answerContent; }
+    public void setAnswerContent(JsonNode answerContent) { this.answerContent = answerContent; }
 
     public String getAiFeedback() { return aiFeedback; }
 

@@ -1,5 +1,8 @@
 package com.lms.learning.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lms.learning.dto.PagedResponse;
 import com.lms.learning.dto.SubmitAnswerRequest;
 import com.lms.learning.dto.TaskResultResponse;
@@ -25,17 +28,20 @@ public class LearningService {
     private final TaskResultRepository taskResultRepository;
     private final TaskCheckerFactory checkerFactory;
     private final AccessCheckService accessCheckService;
+    private final ObjectMapper objectMapper;
     private final TaskResultMapper mapper;
 
     public LearningService(TaskRepository taskRepository,
             TaskResultRepository taskResultRepository,
             TaskCheckerFactory checkerFactory,
             AccessCheckService accessCheckService,
+            ObjectMapper objectMapper,
             TaskResultMapper mapper) {
         this.taskRepository = taskRepository;
         this.taskResultRepository = taskResultRepository;
         this.checkerFactory = checkerFactory;
         this.accessCheckService = accessCheckService;
+        this.objectMapper = objectMapper;
         this.mapper = mapper;
     }
 
@@ -53,8 +59,11 @@ public class LearningService {
                     "This task has already been validated by a teacher and cannot be resubmitted.");
         }
 
+        validateAnswerContent(request.answerContent());
+        String answerJson = writeAnswerJson(request.answerContent());
+
         EvaluationResult evaluation = checkerFactory.getChecker(task.getType())
-                .check(task, request.answerContent());
+                .check(task, answerJson);
 
         TaskResult result = existing.orElseGet(TaskResult::new);
         result.setTaskId(taskId);
@@ -65,6 +74,23 @@ public class LearningService {
         result.setStatus(ResultStatus.CHECKED);
 
         return mapper.toResponse(taskResultRepository.save(result));
+    }
+
+    private void validateAnswerContent(JsonNode node) {
+        if (node == null || node.isNull() || node.isMissingNode()) {
+            throw ApiBusinessException.badRequest("answer_content is required");
+        }
+        if (node.isTextual() && node.asText().isBlank()) {
+            throw ApiBusinessException.badRequest("answer_content must not be blank");
+        }
+    }
+
+    private String writeAnswerJson(JsonNode node) {
+        try {
+            return objectMapper.writeValueAsString(node);
+        } catch (JsonProcessingException e) {
+            throw ApiBusinessException.badRequest("Invalid answer_content: " + e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)
