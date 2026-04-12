@@ -40,4 +40,22 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             """)
     boolean existsByIdAndAuthorId(@Param("taskId") Long taskId,
             @Param("authorId") Long authorId);
+
+    /**
+     * True if the student is in a group that has the course containing this task assigned.
+     * Used by learning-service internal access check.
+     */
+    @Query(
+            value =
+                    """
+            SELECT EXISTS(
+                SELECT 1
+                FROM tasks t
+                INNER JOIN group_courses gc ON gc.course_id = t.course_id
+                INNER JOIN user_groups ug ON ug.group_id = gc.group_id AND ug.user_id = :studentId
+                WHERE t.id = :taskId
+            )
+            """,
+            nativeQuery = true)
+    boolean studentHasAccessToTask(@Param("studentId") Long studentId, @Param("taskId") Long taskId);
 }
