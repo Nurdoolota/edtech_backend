@@ -67,6 +67,16 @@ class ContentJsonValidatorTest {
                 .hasMessageContaining("content.correctOptions");
     }
 
+    @Test
+    void trueFalse_emptyCorrectOptions_throws() {
+        assertThatThrownBy(() ->
+                validator.validate(TaskType.TRUE_FALSE,
+                        Map.of("questions", List.of("Q?"),
+                                "correctOptions", List.of())))
+                .isInstanceOf(ApiBusinessException.class)
+                .hasMessageContaining("content.correctOptions");
+    }
+
     // --- VIDEO ---
 
     @Test
@@ -107,6 +117,15 @@ class ContentJsonValidatorTest {
                 .hasMessageContaining("content.level");
     }
 
+    @Test
+    void text_blankLevel_throws() {
+        assertThatThrownBy(() ->
+                validator.validate(TaskType.TEXT,
+                        Map.of("sourceText", "text", "questions", List.of("Q"), "level", "  ")))
+                .isInstanceOf(ApiBusinessException.class)
+                .hasMessageContaining("content.level");
+    }
+
     // --- TRANSLATION ---
 
     @Test
@@ -120,6 +139,15 @@ class ContentJsonValidatorTest {
     void translation_missingInstructions_throws() {
         assertThatThrownBy(() ->
                 validator.validate(TaskType.TRANSLATION, Map.of("sourceText", "Текст")))
+                .isInstanceOf(ApiBusinessException.class)
+                .hasMessageContaining("content.instructions");
+    }
+
+    @Test
+    void translation_blankInstructions_throws() {
+        assertThatThrownBy(() ->
+                validator.validate(TaskType.TRANSLATION,
+                        Map.of("sourceText", "Текст", "instructions", "   ")))
                 .isInstanceOf(ApiBusinessException.class)
                 .hasMessageContaining("content.instructions");
     }

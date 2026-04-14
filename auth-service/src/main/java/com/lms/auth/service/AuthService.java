@@ -116,4 +116,21 @@ public class AuthService {
                         .orElseThrow(() -> new ApiBusinessException("NOT_FOUND", HttpStatus.NOT_FOUND.value(), "User not found"));
         return UserMapper.toResponse(user);
     }
+
+    @Transactional(readOnly = true)
+    public UserResponse findStudentByEmail(String email) {
+        String normalizedEmail = email == null ? "" : email.trim().toLowerCase();
+        if (normalizedEmail.isBlank()) {
+            throw new ApiBusinessException(
+                    "VALIDATION_ERROR", HttpStatus.BAD_REQUEST.value(), "Email is required");
+        }
+        User user =
+                userRepository
+                        .findByEmailIgnoreCaseAndRole(normalizedEmail, RoleName.STUDENT)
+                        .orElseThrow(
+                                () ->
+                                        new ApiBusinessException(
+                                                "NOT_FOUND", HttpStatus.NOT_FOUND.value(), "Student not found"));
+        return UserMapper.toResponse(user);
+    }
 }

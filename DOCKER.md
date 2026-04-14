@@ -2,7 +2,7 @@
 
 Контейнеры не видят `localhost` друг друга: `localhost` внутри контейнера — это только он сам. Чтобы **gateway** ходил в **auth** по имени `http://auth-service:8081`, оба процесса должны быть в **одной пользовательской сети**, а у контейнера auth должно быть **имя** `auth-service` (или сетевой алиас с тем же именем).
 
-То же правило для **content**, **learning** и **PostgreSQL**: внутри сети используйте **имена контейнеров** как хосты в `DB_URL` и `*_SERVICE_URL`.
+То же правило для **content**, **learning**, **ai-service** (для `AI_SERVICE_URL` из learning) и **PostgreSQL**: внутри сети используйте **имена контейнеров** как хосты в `DB_URL` и `*_SERVICE_URL`.
 
 ## Сводка: один стек в сети `lms-net`
 
@@ -12,9 +12,10 @@
 | auth-service | `auth-service` | `8081` | Аутентификация, миграции Flyway |
 | content-service | `content-service` | `8082` | Контент и проверка доступа |
 | learning-service | `learning-service` | `8083` | Сабмиты и оценка заданий |
+| ai-service | `ai-service` | `8084` | Внутренний LLM-оценщик (не через gateway) |
 | gateway-service | любое (например `gateway-service`) | `8080` | Единая точка входа API |
 
-`JWT_SECRET` в **auth**, **content** и **learning** должен **совпадать**.
+`JWT_SECRET` в **auth**, **content** и **learning** должен **совпадать**. **ai-service** JWT не использует; для LLM задаются `LLM_*` (см. раздел про **ai-service**).
 
 ## Предварительно
 
@@ -31,11 +32,14 @@ docker build -t content-service:local .
 cd ../learning-service
 docker build -t learning-service:local .
 
+cd ../ai-service
+docker build -t ai-service:local .
+
 cd ../gateway-service
 docker build -t gateway-service:local .
 ```
 
-3. Подготовлены файлы **`.env`** (скопируйте из `.env.example` в каждом сервисе и выставьте значения). Секреты не коммитьте.
+3. Подготовлены файлы **`.env`** (скопируйте из `.env.example` в каждом сервисе и выставьте значения). Секреты не коммитьте. Для **ai-service** обязательно настройте **`LLM_*`** под ваш провайдер (LM Studio на хосте, облако и т.д.).
 
 ## База данных и auth
 
@@ -57,9 +61,32 @@ docker build -t gateway-service:local .
 docker network create lms-net
 ```
 
+## AI Service (`ai-service`) и доступ к LLM из контейнера
+
+**ai-service** не ходит в PostgreSQL. Он вызывает внешний **OpenAI-compatible** API (`/v1/chat/completions`). Переменные см. в **`ai-service/.env.example`**.
+
+Типичные случаи:
+
+| Где запущен LLM (LM Studio, vLLM и т.п.) | Что указать в `ai-service` `.env` |
+|----------------------------------------|-----------------------------------|
+| На **хосте** (Windows/macOS Docker Desktop) | `LLM_API_BASE_URL=http://host.docker.internal:1234/v1` (порт подставьте свой) |
+| На **хосте** (Linux без `host.docker.internal`) | Запускайте контейнер ai с `--add-host=host.docker.internal:host-gateway` и тем же URL, либо укажите IP хоста в bridge-сети |
+| В **другом контейнере** в `lms-net` с именем, например, `llm` | `LLM_API_BASE_URL=http://llm:8000/v1` (путь и порт — как у вашего образа) |
+
+**learning-service** обращается к AI по **`AI_SERVICE_URL`**:
+
+- Если **ai-service** в той же сети `lms-net` с именем контейнера `ai-service`:  
+  `AI_SERVICE_URL=http://ai-service:8084`
+- Если AI запущен **на хосте** без Docker:  
+  `AI_SERVICE_URL=http://host.docker.internal:8084` и контейнер **ai-service** не нужен (но тогда сам процесс ai должен слушать порт на хосте).
+
+Смена облачного провайдера (OpenAI, MiniMax и т.д.) — только **`LLM_API_BASE_URL`**, **`LLM_MODEL`**, **`LLM_API_KEY`** в `.env` ai-service; образ тот же.
+
+---
+
 ## Полный стек: PostgreSQL и все backend-сервисы в `lms-net`
 
-Ниже — один сценарий, когда БД и **auth**, **content**, **learning**, **gateway** работают в **одной** сети; имена контейнеров совпадают со сводной таблицей в начале документа.
+Ниже — один сценарий, когда БД и **auth**, **content**, **learning**, **ai** (при необходимости), **gateway** работают в **одной** сети; имена контейнеров совпадают со сводной таблицей в начале документа.
 
 ### PostgreSQL в той же сети
 
@@ -96,14 +123,27 @@ cd content-service
 docker run --rm --name content-service --network lms-net -p 8082:8082 --env-file .env content-service:local
 ```
 
+**ai-service** (если оценка через LLM нужна в Docker-стеке) — **до** learning, чтобы при старте learning уже резолвил `AI_SERVICE_URL`. В `.env` ai-service задайте доступ к LLM (см. раздел «AI Service и доступ к LLM» выше).
+
+```bash
+cd ai-service
+docker run --rm --name ai-service --network lms-net -p 8084:8084 --env-file .env ai-service:local
+```
+
 **learning-service** — в `.env` укажите соседей по сети (без слэша в конце):
 
 ```env
 CONTENT_SERVICE_URL=http://content-service:8082
+AI_SERVICE_URL=http://ai-service:8084
+```
+
+Если **ai-service** не в Docker, а процесс AI запущен **на хосте** на порту 8084:
+
+```env
 AI_SERVICE_URL=http://host.docker.internal:8084
 ```
 
-`AI_SERVICE_URL`: URL внутреннего AI-сервиса. Если он запущен **на хосте** (не в Docker), на Docker Desktop часто используют `host.docker.internal` и порт процесса на машине. На Linux, если `host.docker.internal` недоступен, добавьте к `docker run` learning: `--add-host=host.docker.internal:host-gateway`. Если позже поднимете AI в той же сети с именем контейнера `ai-service`, задайте `http://ai-service:8084`.
+На Linux при отсутствии `host.docker.internal` добавьте к `docker run` learning: `--add-host=host.docker.internal:host-gateway`.
 
 ```bash
 cd learning-service
@@ -125,7 +165,7 @@ cd gateway-service
 docker run --rm --name gateway-service --network lms-net -p 8080:8080 --env-file .env gateway-service:local
 ```
 
-**Порядок запуска:** сеть → Postgres (если БД в Docker) → **auth-service** → **content-service** → **learning-service** → **gateway-service**.
+**Порядок запуска:** сеть → Postgres (если БД в Docker) → **auth-service** → **content-service** → **ai-service** (если используете контейнер) → **learning-service** → **gateway-service**.
 
 ## Запуск auth-service (минимальный сценарий: только auth + gateway)
 
@@ -169,7 +209,7 @@ docker run --rm --network lms-net -p 8080:8080 --env-file .env gateway-service:l
 3. Запущен **auth-service** (имя `auth-service`, сеть `lms-net`).
 4. Запущен **gateway-service** (сеть `lms-net`).
 
-**Полный стек** — см. порядок в разделе «Полный стек» выше (включая **content-service** и **learning-service**).
+**Полный стек** — см. порядок в разделе «Полный стек» выше (включая **content-service**, **ai-service** при необходимости и **learning-service**).
 
 Остановка: `Ctrl+C` в терминале с контейнером или `docker stop <container_id>`. С флагом `--rm` контейнеры удаляются после остановки.
 
@@ -180,6 +220,7 @@ docker run --rm --network lms-net -p 8080:8080 --env-file .env gateway-service:l
 | Health auth | `GET http://localhost:8081/actuator/health` |
 | Health content | `GET http://localhost:8082/actuator/health` |
 | Health learning | `GET http://localhost:8083/actuator/health` |
+| Health ai-service | `GET http://localhost:8084/actuator/health` |
 | Health gateway | `GET http://localhost:8080/actuator/health` |
 | Регистрация через gateway | `POST http://localhost:8080/api/v1/auth/register` + `Content-Type: application/json` |
 | Регистрация напрямую в auth | `POST http://localhost:8081/api/v1/auth/register` |
@@ -196,3 +237,5 @@ docker run --rm --network lms-net -p 8080:8080 --env-file .env gateway-service:l
 | `AUTH_SERVICE_URL=http://auth-service:8081` и аналоги для content/learning | Gateway ходит к downstream по DNS Docker |
 | Одинаковый `JWT_SECRET` у auth, content, learning, gateway | Единая проверка токенов |
 | `DB_URL=…//postgres:5432/…` при Postgres в той же сети | БД по имени контейнера, не `localhost` |
+| `AI_SERVICE_URL=http://ai-service:8084` в learning при AI в той же сети | Learning вызывает оценку по DNS Docker |
+| В ai-service: `LLM_API_BASE_URL` на хост с LLM (`host.docker.internal`) или на контейнер с API | Контейнер ai видит LLM не как `localhost` |

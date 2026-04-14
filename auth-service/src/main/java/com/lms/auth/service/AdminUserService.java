@@ -4,6 +4,7 @@ import com.lms.auth.dto.AdminUserPatchRequest;
 import com.lms.auth.dto.PagedUsersResponse;
 import com.lms.auth.dto.UserResponse;
 import com.lms.auth.entity.Role;
+import com.lms.auth.entity.RoleName;
 import com.lms.auth.entity.User;
 import com.lms.auth.exception.ApiBusinessException;
 import com.lms.auth.repository.RoleRepository;
@@ -26,8 +27,20 @@ public class AdminUserService {
     }
 
     @Transactional(readOnly = true)
-    public PagedUsersResponse list(Pageable pageable) {
-        Page<User> page = userRepository.findPage(pageable);
+    public UserResponse getById(long id) {
+        User user =
+                userRepository
+                        .findByIdWithRole(id)
+                        .orElseThrow(
+                                () ->
+                                        new ApiBusinessException(
+                                                "NOT_FOUND", HttpStatus.NOT_FOUND.value(), "User not found"));
+        return UserMapper.toResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedUsersResponse list(RoleName role, Pageable pageable) {
+        Page<User> page = role == null ? userRepository.findPage(pageable) : userRepository.findPageByRole(role, pageable);
         var content = page.getContent().stream().map(UserMapper::toResponse).toList();
         return new PagedUsersResponse(content, page.getTotalElements(), page.getTotalPages());
     }

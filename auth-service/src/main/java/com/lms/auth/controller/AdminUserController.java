@@ -3,6 +3,7 @@ package com.lms.auth.controller;
 import com.lms.auth.dto.AdminUserPatchRequest;
 import com.lms.auth.dto.PagedUsersResponse;
 import com.lms.auth.dto.UserResponse;
+import com.lms.auth.entity.RoleName;
 import com.lms.auth.exception.ApiBusinessException;
 import com.lms.auth.security.JwtUserPrincipal;
 import com.lms.auth.service.AdminUserService;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -34,9 +36,18 @@ public class AdminUserController {
     @GetMapping
     @Operation(summary = "List users (paginated)")
     public PagedUsersResponse list(
-            Authentication authentication, @PageableDefault(size = 20) Pageable pageable) {
+            Authentication authentication,
+            @RequestParam(required = false) RoleName role,
+            @PageableDefault(size = 20) Pageable pageable) {
         rejectIfImpersonating(authentication);
-        return adminUserService.list(pageable);
+        return adminUserService.list(role, pageable);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get user by id")
+    public UserResponse getById(Authentication authentication, @PathVariable long id) {
+        rejectIfImpersonating(authentication);
+        return adminUserService.getById(id);
     }
 
     @PatchMapping("/{id}")

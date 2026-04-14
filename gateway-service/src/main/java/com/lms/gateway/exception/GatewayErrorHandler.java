@@ -1,7 +1,10 @@
 package com.lms.gateway.exception;
 
 import com.lms.gateway.filter.CorrelationIdFilter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Map;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.annotation.Order;
@@ -36,6 +39,12 @@ public class GatewayErrorHandler implements ErrorWebExceptionHandler {
 
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
+        // #region agent log
+        boolean alreadyCommitted = exchange.getResponse().isCommitted();
+        dbgLog("GatewayErrorHandler.java:38", "handle() called",
+                "H-B", "{\"committed\":" + alreadyCommitted + ",\"exception\":\"" + ex.getClass().getSimpleName() + "\"}");
+        // #endregion
+
         HttpStatus status = resolveStatus(ex);
         String code = STATUS_TO_CODE.getOrDefault(status, "INTERNAL_ERROR");
         String message = userMessage(ex, status);
@@ -79,4 +88,14 @@ public class GatewayErrorHandler implements ErrorWebExceptionHandler {
     private String escape(String s) {
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
+
+    // #region agent log
+    private static void dbgLog(String location, String message, String hypothesisId, String dataJson) {
+        String line = String.format(
+                "{\"sessionId\":\"5bf165\",\"hypothesisId\":\"%s\",\"location\":\"%s\",\"message\":\"%s\",\"data\":%s,\"timestamp\":%d}%n",
+                hypothesisId, location, message, dataJson, Instant.now().toEpochMilli());
+        try (FileWriter fw = new FileWriter("debug-5bf165.log", true)) { fw.write(line); }
+        catch (IOException ignored) {}
+    }
+    // #endregion
 }
