@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -33,6 +34,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> constraint(ConstraintViolationException ex) {
         return ResponseEntity.badRequest()
                 .body(new ApiError("VALIDATION_ERROR", ex.getMessage(), rid()));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiError> responseStatus(ResponseStatusException ex) {
+        String code = ex.getStatusCode().value() == 429
+                ? "TOO_MANY_REQUESTS"
+                : ex.getStatusCode().value() == 400
+                ? "BAD_REQUEST"
+                : "ERROR";
+        return ResponseEntity.status(ex.getStatusCode())
+                .body(new ApiError(code, ex.getReason(), rid()));
     }
 
     @ExceptionHandler(Exception.class)

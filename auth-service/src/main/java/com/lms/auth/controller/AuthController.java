@@ -3,10 +3,12 @@ package com.lms.auth.controller;
 import com.lms.auth.dto.AvatarUploadResponse;
 import com.lms.auth.dto.ChangePasswordRequest;
 import com.lms.auth.dto.DeleteAccountRequest;
+import com.lms.auth.dto.ForgotPasswordRequest;
 import com.lms.auth.dto.LoginRequest;
 import com.lms.auth.dto.ProfileUpdateRequest;
 import com.lms.auth.dto.RefreshRequest;
 import com.lms.auth.dto.RegisterRequest;
+import com.lms.auth.dto.ResetPasswordRequest;
 import com.lms.auth.dto.TokenResponse;
 import com.lms.auth.dto.UserResponse;
 import com.lms.auth.entity.RoleName;
@@ -16,10 +18,12 @@ import com.lms.auth.repository.UserRepository;
 import com.lms.auth.security.JwtUserPrincipal;
 import com.lms.auth.service.AuthService;
 import com.lms.auth.service.AvatarService;
+import com.lms.auth.service.PasswordResetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.Instant;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -44,13 +48,16 @@ public class AuthController {
     private final AuthService authService;
     private final AvatarService avatarService;
     private final UserRepository userRepository;
+    private final PasswordResetService passwordResetService;
 
     public AuthController(AuthService authService,
                           AvatarService avatarService,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          PasswordResetService passwordResetService) {
         this.authService = authService;
         this.avatarService = avatarService;
         this.userRepository = userRepository;
+        this.passwordResetService = passwordResetService;
     }
 
     @PostMapping("/register")
@@ -117,6 +124,20 @@ public class AuthController {
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
         return new AvatarUploadResponse(url);
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Request a 6-digit password reset code via email")
+    public Map<String, Boolean> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.email());
+        return Map.of("sent", true);
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Verify 6-digit code and set a new password")
+    public Map<String, Boolean> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.email(), request.code(), request.newPassword());
+        return Map.of("reset", true);
     }
 
     @GetMapping("/students/by-email")
