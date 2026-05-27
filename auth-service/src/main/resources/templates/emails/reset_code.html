@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<p>Hi <span th:text="${displayName}">User</span>,</p>
+<p>Your password reset code is: <strong th:text="${code}">000000</strong></p>
+<p>This code expires in <span th:text="${expiresMinutes}">15</span> minutes.</p>
+<p>If you did not request this, ignore this email.</p>
+</body>
+</html>

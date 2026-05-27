@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<p>Hi <span th:text="${displayName}">User</span>,</p>
+<p>Your email change confirmation code is: <strong th:text="${code}">000000</strong></p>
+<p>This code is valid for <span th:text="${expiresMinutes}">15</span> minutes.</p>
+</body>
+</html>

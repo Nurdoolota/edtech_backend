@@ -32,6 +32,11 @@ avatar:
   max-size-mb: ${AVATAR_MAX_SIZE_MB:2}
   storage-path: ${AVATAR_STORAGE_PATH:./data/avatars}
 
+email:
+  provider: console
+  from: noreply@lms-english.local
+  frontend-url: http://localhost:3000
+
 management:
   endpoints:
     web:

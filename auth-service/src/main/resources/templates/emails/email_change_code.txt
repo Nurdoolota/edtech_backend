@@ -1,0 +1,3 @@
+Hi [(${displayName})],
+Your email change confirmation code is: [(${code})]
+This code is valid for [(${expiresMinutes})] minutes.

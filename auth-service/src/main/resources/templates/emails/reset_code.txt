@@ -1,0 +1,4 @@
+Hi [(${displayName})],
+Your password reset code is: [(${code})]
+This code expires in [(${expiresMinutes})] minutes.
+If you did not request this, ignore this email.
