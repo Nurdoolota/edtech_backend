@@ -1,18 +1,13 @@
 package com.lms.content.controller;
 
-import com.lms.content.dto.PagedResponse;
 import com.lms.content.dto.course.CourseResponse;
 import com.lms.content.dto.course.CreateCourseRequest;
 import com.lms.content.dto.course.UpdateCourseRequest;
-import com.lms.content.dto.task.TaskResponse;
 import com.lms.content.security.JwtUserPrincipal;
 import com.lms.content.service.CourseService;
-import com.lms.content.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,11 +26,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class CourseController {
 
     private final CourseService courseService;
-    private final TaskService taskService;
 
-    public CourseController(CourseService courseService, TaskService taskService) {
+    public CourseController(CourseService courseService) {
         this.courseService = courseService;
-        this.taskService = taskService;
     }
 
     @GetMapping
@@ -80,14 +73,4 @@ public class CourseController {
         return ResponseEntity.noContent().build();
     }
 
-    // --- Topics = Tasks within a course ---
-
-    @GetMapping("/{courseId}/topics")
-    @Operation(summary = "List tasks (topics) for a course")
-    public PagedResponse<TaskResponse> listTopics(
-            @PathVariable Long courseId,
-            @AuthenticationPrincipal JwtUserPrincipal principal,
-            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
-        return taskService.findByCourse(courseId, principal, pageable);
-    }
 }

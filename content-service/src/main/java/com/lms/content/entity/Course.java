@@ -27,6 +27,15 @@ public class Course {
     @Column(name = "author_id", nullable = false)
     private Long authorId;
 
+    @Column(name = "publish_mode", nullable = false, length = 16)
+    private String publishMode = "AUTO";
+
+    @Column(nullable = false, length = 8)
+    private String level = "A1";
+
+    @Column(name = "access_status", nullable = false, length = 16)
+    private String accessStatus = "OPEN";
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -50,6 +59,18 @@ public class Course {
     public Long getAuthorId() { return authorId; }
 
     public void setAuthorId(Long authorId) { this.authorId = authorId; }
+
+    public String getPublishMode() { return publishMode; }
+
+    public void setPublishMode(String publishMode) { this.publishMode = publishMode; }
+
+    public String getLevel() { return level; }
+
+    public void setLevel(String level) { this.level = level; }
+
+    public String getAccessStatus() { return accessStatus; }
+
+    public void setAccessStatus(String accessStatus) { this.accessStatus = accessStatus; }
 
     public Instant getCreatedAt() { return createdAt; }
 
