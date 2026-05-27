@@ -1,5 +1,6 @@
 package com.lms.auth.service;
 
+import com.lms.auth.dto.ChangePasswordRequest;
 import com.lms.auth.dto.DeleteAccountRequest;
 import com.lms.auth.dto.LoginRequest;
 import com.lms.auth.dto.ProfileUpdateRequest;
@@ -169,6 +170,21 @@ public class AuthService {
         user.setUpdatedAt(Instant.now());
         userRepository.save(user);
         return UserMapper.toResponse(user);
+    }
+
+    @Transactional
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = userRepository
+                .findByIdWithRole(userId)
+                .orElseThrow(() -> new ApiBusinessException("NOT_FOUND", HttpStatus.NOT_FOUND.value(), "User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new ApiBusinessException("UNAUTHORIZED", HttpStatus.UNAUTHORIZED.value(), "Invalid current password");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
     }
 
     @Transactional

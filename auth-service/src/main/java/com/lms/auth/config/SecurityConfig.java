@@ -56,6 +56,8 @@ public class SecurityConfig {
                                 .permitAll()
                                 .requestMatchers(HttpMethod.DELETE, "/api/v1/auth/me")
                                 .permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/change-password")
+                                .permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/v1/admin/impersonate/stop")
                                 .authenticated()
                                 .requestMatchers("/api/v1/admin/**")

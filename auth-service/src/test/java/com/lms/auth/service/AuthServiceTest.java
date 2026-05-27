@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.lms.auth.dto.ChangePasswordRequest;
 import com.lms.auth.dto.DeleteAccountRequest;
 import com.lms.auth.dto.LoginRequest;
 import com.lms.auth.dto.ProfileUpdateRequest;
@@ -295,5 +296,46 @@ class AuthServiceTest {
                 () -> authService.deleteAccount(7L, new DeleteAccountRequest("wrong")));
         assertEquals("UNAUTHORIZED", ex.getCode());
         assertEquals(true, u.isActive()); // unchanged
+    }
+
+    // ── Change password (POST /change-password) ───────────────────────────────
+
+    /** changePassword with correct current password updates the hash. */
+    @Test
+    void changePassword_success_updatesHash() {
+        Role student = role(RoleName.STUDENT);
+        User u = user(5L, "user@example.com", student, true);
+        when(userRepository.findByIdWithRole(5L)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("oldPass1", u.getPasswordHash())).thenReturn(true);
+        when(passwordEncoder.encode("newPass99")).thenReturn("{bcrypt}newhash");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        authService.changePassword(5L, "oldPass1", "newPass99");
+
+        assertEquals("{bcrypt}newhash", u.getPasswordHash());
+        verify(userRepository).save(u);
+    }
+
+    /** changePassword with wrong current password → UNAUTHORIZED. */
+    @Test
+    void changePassword_wrongCurrentPassword_unauthorized() {
+        Role student = role(RoleName.STUDENT);
+        User u = user(5L, "user@example.com", student, true);
+        when(userRepository.findByIdWithRole(5L)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("wrongOld", u.getPasswordHash())).thenReturn(false);
+
+        ApiBusinessException ex = assertThrows(ApiBusinessException.class,
+                () -> authService.changePassword(5L, "wrongOld", "newPass99"));
+        assertEquals("UNAUTHORIZED", ex.getCode());
+    }
+
+    /** changePassword with unknown userId → NOT_FOUND. */
+    @Test
+    void changePassword_userNotFound() {
+        when(userRepository.findByIdWithRole(999L)).thenReturn(Optional.empty());
+
+        ApiBusinessException ex = assertThrows(ApiBusinessException.class,
+                () -> authService.changePassword(999L, "any", "newPass99"));
+        assertEquals("NOT_FOUND", ex.getCode());
     }
 }

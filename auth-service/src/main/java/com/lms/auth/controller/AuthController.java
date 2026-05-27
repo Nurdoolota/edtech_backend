@@ -1,6 +1,7 @@
 package com.lms.auth.controller;
 
 import com.lms.auth.dto.AvatarUploadResponse;
+import com.lms.auth.dto.ChangePasswordRequest;
 import com.lms.auth.dto.DeleteAccountRequest;
 import com.lms.auth.dto.LoginRequest;
 import com.lms.auth.dto.ProfileUpdateRequest;
@@ -21,6 +22,7 @@ import jakarta.validation.Valid;
 import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -82,6 +84,15 @@ public class AuthController {
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody ProfileUpdateRequest request) {
         return authService.updateProfile(userId, request);
+    }
+
+    @PostMapping("/change-password")
+    @Operation(summary = "Change password (gateway injects X-User-Id)")
+    public ResponseEntity<Void> changePassword(
+            @RequestHeader("X-User-Id") Long userId,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(userId, request.currentPassword(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/me")
