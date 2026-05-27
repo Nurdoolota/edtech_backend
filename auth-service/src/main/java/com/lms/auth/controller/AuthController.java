@@ -1,7 +1,9 @@
 package com.lms.auth.controller;
 
 import com.lms.auth.dto.AvatarUploadResponse;
+import com.lms.auth.dto.ChangeEmailRequest;
 import com.lms.auth.dto.ChangePasswordRequest;
+import com.lms.auth.dto.ConfirmEmailRequest;
 import com.lms.auth.dto.DeleteAccountRequest;
 import com.lms.auth.dto.ForgotPasswordRequest;
 import com.lms.auth.dto.LoginRequest;
@@ -18,6 +20,7 @@ import com.lms.auth.repository.UserRepository;
 import com.lms.auth.security.JwtUserPrincipal;
 import com.lms.auth.service.AuthService;
 import com.lms.auth.service.AvatarService;
+import com.lms.auth.service.EmailChangeService;
 import com.lms.auth.service.PasswordResetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,15 +52,18 @@ public class AuthController {
     private final AvatarService avatarService;
     private final UserRepository userRepository;
     private final PasswordResetService passwordResetService;
+    private final EmailChangeService emailChangeService;
 
     public AuthController(AuthService authService,
                           AvatarService avatarService,
                           UserRepository userRepository,
-                          PasswordResetService passwordResetService) {
+                          PasswordResetService passwordResetService,
+                          EmailChangeService emailChangeService) {
         this.authService = authService;
         this.avatarService = avatarService;
         this.userRepository = userRepository;
         this.passwordResetService = passwordResetService;
+        this.emailChangeService = emailChangeService;
     }
 
     @PostMapping("/register")
@@ -138,6 +144,24 @@ public class AuthController {
     public Map<String, Boolean> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         passwordResetService.resetPassword(request.email(), request.code(), request.newPassword());
         return Map.of("reset", true);
+    }
+
+    @PostMapping("/change-email")
+    @Operation(summary = "Initiate email change — sends 6-digit code to new address")
+    public Map<String, Boolean> changeEmail(
+            @RequestHeader("X-User-Id") Long userId,
+            @Valid @RequestBody ChangeEmailRequest request) {
+        emailChangeService.requestChange(userId, request.newEmail(), request.password());
+        return Map.of("sent", true);
+    }
+
+    @PostMapping("/confirm-email")
+    @Operation(summary = "Confirm email change with 6-digit code")
+    public Map<String, Boolean> confirmEmail(
+            @RequestHeader("X-User-Id") Long userId,
+            @Valid @RequestBody ConfirmEmailRequest request) {
+        emailChangeService.confirmChange(userId, request.code());
+        return Map.of("emailChanged", true);
     }
 
     @GetMapping("/students/by-email")

@@ -62,6 +62,10 @@ public class SecurityConfig {
                                         "/api/v1/auth/forgot-password",
                                         "/api/v1/auth/reset-password")
                                 .permitAll()
+                                .requestMatchers(HttpMethod.POST,
+                                        "/api/v1/auth/change-email",
+                                        "/api/v1/auth/confirm-email")
+                                .permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/v1/admin/impersonate/stop")
                                 .authenticated()
                                 .requestMatchers("/api/v1/admin/**")
