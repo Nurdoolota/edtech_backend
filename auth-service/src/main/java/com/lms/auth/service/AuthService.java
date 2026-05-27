@@ -1,6 +1,8 @@
 package com.lms.auth.service;
 
+import com.lms.auth.dto.DeleteAccountRequest;
 import com.lms.auth.dto.LoginRequest;
+import com.lms.auth.dto.ProfileUpdateRequest;
 import com.lms.auth.dto.RefreshRequest;
 import com.lms.auth.dto.RegisterRequest;
 import com.lms.auth.dto.TokenResponse;
@@ -13,6 +15,7 @@ import com.lms.auth.repository.UserRepository;
 import com.lms.auth.security.JwtService;
 import com.lms.auth.security.JwtUserPrincipal;
 import io.jsonwebtoken.JwtException;
+import java.time.Instant;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -57,7 +60,7 @@ public class AuthService {
         return UserMapper.toResponse(user);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TokenResponse login(LoginRequest request) {
         User user =
                 userRepository
@@ -77,6 +80,8 @@ public class AuthService {
                     HttpStatus.FORBIDDEN.value(),
                     "Account is disabled. Contact an administrator.");
         }
+        user.setLastLoginAt(Instant.now());
+        userRepository.save(user);
         var pair = jwtService.issueTokens(user, null);
         return TokenResponse.of(pair.accessToken(), pair.refreshToken(), pair.accessExpiresInSeconds());
     }
@@ -132,5 +137,53 @@ public class AuthService {
                                         new ApiBusinessException(
                                                 "NOT_FOUND", HttpStatus.NOT_FOUND.value(), "Student not found"));
         return UserMapper.toResponse(user);
+    }
+
+    @Transactional
+    public UserResponse updateProfile(Long userId, ProfileUpdateRequest request) {
+        User user = userRepository
+                .findByIdWithRole(userId)
+                .orElseThrow(() -> new ApiBusinessException("NOT_FOUND", HttpStatus.NOT_FOUND.value(), "User not found"));
+
+        if (request.firstName() != null) {
+            user.setFirstName(request.firstName());
+        }
+        if (request.lastName() != null) {
+            user.setLastName(request.lastName());
+        }
+        if (request.bio() != null) {
+            user.setBio(request.bio());
+        }
+        if (request.locale() != null) {
+            user.setLocale(request.locale());
+        }
+        if (request.timezone() != null) {
+            user.setTimezone(request.timezone());
+        }
+        if (request.emailPrivate() != null) {
+            user.setEmailPrivate(request.emailPrivate());
+        }
+        if (request.notifications() != null) {
+            user.setNotifications(request.notifications());
+        }
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
+        return UserMapper.toResponse(user);
+    }
+
+    @Transactional
+    public void deleteAccount(Long userId, DeleteAccountRequest request) {
+        User user = userRepository
+                .findByIdWithRole(userId)
+                .orElseThrow(() -> new ApiBusinessException("NOT_FOUND", HttpStatus.NOT_FOUND.value(), "User not found"));
+
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new ApiBusinessException("UNAUTHORIZED", HttpStatus.UNAUTHORIZED.value(), "Invalid password");
+        }
+
+        user.setActive(false);
+        user.setEmail("deleted-" + user.getId() + "@deleted.invalid");
+        user.setUpdatedAt(Instant.now());
+        userRepository.save(user);
     }
 }

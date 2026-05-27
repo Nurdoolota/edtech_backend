@@ -7,7 +7,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.lms.auth.dto.DeleteAccountRequest;
 import com.lms.auth.dto.LoginRequest;
+import com.lms.auth.dto.ProfileUpdateRequest;
 import com.lms.auth.dto.RefreshRequest;
 import com.lms.auth.dto.RegisterRequest;
 import com.lms.auth.dto.TokenResponse;
@@ -231,5 +233,67 @@ class AuthServiceTest {
         when(userRepository.findByIdWithRole(99L)).thenReturn(Optional.empty());
         ApiBusinessException ex = assertThrows(ApiBusinessException.class, () -> authService.me(auth));
         assertEquals("NOT_FOUND", ex.getCode());
+    }
+
+    // ── Profile update (PATCH /me) ────────────────────────────────────────────
+
+    /** updateProfile applies only non-null fields and returns updated response. */
+    @Test
+    void updateProfile_success_appliesNonNullFields() {
+        Role student = role(RoleName.STUDENT);
+        User u = user(42L, "me@example.com", student, true);
+        when(userRepository.findByIdWithRole(42L)).thenReturn(Optional.of(u));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        var req = new ProfileUpdateRequest("Ivan", null, "Bio text", "en", null, true, null);
+        UserResponse resp = authService.updateProfile(42L, req);
+
+        assertEquals("Ivan", resp.firstName());
+        assertEquals("Last", resp.lastName()); // unchanged
+        assertEquals("Bio text", resp.bio());
+        assertEquals("en", resp.locale());
+        assertEquals("UTC", resp.timezone()); // unchanged
+        assertEquals(true, resp.emailPrivate());
+    }
+
+    /** updateProfile with non-existent user → NOT_FOUND. */
+    @Test
+    void updateProfile_userNotFound() {
+        when(userRepository.findByIdWithRole(99L)).thenReturn(Optional.empty());
+        var req = new ProfileUpdateRequest(null, null, null, null, null, null, null);
+        ApiBusinessException ex = assertThrows(ApiBusinessException.class,
+                () -> authService.updateProfile(99L, req));
+        assertEquals("NOT_FOUND", ex.getCode());
+    }
+
+    // ── Delete account (DELETE /me) ───────────────────────────────────────────
+
+    /** deleteAccount with correct password soft-deletes the user. */
+    @Test
+    void deleteAccount_success_setsInactive() {
+        Role student = role(RoleName.STUDENT);
+        User u = user(7L, "del@example.com", student, true);
+        when(userRepository.findByIdWithRole(7L)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("correct", u.getPasswordHash())).thenReturn(true);
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        authService.deleteAccount(7L, new DeleteAccountRequest("correct"));
+
+        assertEquals(false, u.isActive());
+        assertEquals("deleted-7@deleted.invalid", u.getEmail());
+    }
+
+    /** deleteAccount with wrong password → UNAUTHORIZED, user unchanged. */
+    @Test
+    void deleteAccount_wrongPassword_unauthorized() {
+        Role student = role(RoleName.STUDENT);
+        User u = user(7L, "del@example.com", student, true);
+        when(userRepository.findByIdWithRole(7L)).thenReturn(Optional.of(u));
+        when(passwordEncoder.matches("wrong", u.getPasswordHash())).thenReturn(false);
+
+        ApiBusinessException ex = assertThrows(ApiBusinessException.class,
+                () -> authService.deleteAccount(7L, new DeleteAccountRequest("wrong")));
+        assertEquals("UNAUTHORIZED", ex.getCode());
+        assertEquals(true, u.isActive()); // unchanged
     }
 }

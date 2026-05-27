@@ -41,6 +41,30 @@ public class User {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
+    @Column(length = 500)
+    private String bio;
+
+    @Column(nullable = false, length = 8)
+    private String locale = "ru";
+
+    @Column(nullable = false, length = 64)
+    private String timezone = "UTC";
+
+    @Column(name = "email_private", nullable = false)
+    private boolean emailPrivate = false;
+
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private String notifications = "{}";
+
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt = Instant.now();
+
     public Long getId() {
         return id;
     }
@@ -99,5 +123,69 @@ public class User {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public String getLocale() {
+        return locale;
+    }
+
+    public void setLocale(String locale) {
+        this.locale = locale;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+
+    public boolean isEmailPrivate() {
+        return emailPrivate;
+    }
+
+    public void setEmailPrivate(boolean emailPrivate) {
+        this.emailPrivate = emailPrivate;
+    }
+
+    public String getNotifications() {
+        return notifications;
+    }
+
+    public void setNotifications(String notifications) {
+        this.notifications = notifications;
+    }
+
+    public Instant getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(Instant lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
