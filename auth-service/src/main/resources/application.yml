@@ -37,6 +37,9 @@ email:
   from: noreply@lms-english.local
   frontend-url: http://localhost:3000
 
+ai-service:
+  url: ${AI_SERVICE_URL:http://localhost:8084}
+
 management:
   endpoints:
     web:
