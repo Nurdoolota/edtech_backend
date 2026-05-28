@@ -7,10 +7,12 @@ import com.lms.content.dto.lesson.LessonRequest;
 import com.lms.content.dto.lesson.LessonResponse;
 import com.lms.content.dto.lesson.LessonWithContentResponse;
 import com.lms.content.dto.lesson.PublishRequest;
+import com.lms.content.dto.lesson.TaskAvailabilityResult;
 import com.lms.content.dto.lesson.TaskOrderResponse;
 import com.lms.content.dto.lesson.TaskReorderRequest;
 import com.lms.content.dto.task.LessonTaskRequest;
 import com.lms.content.dto.task.TaskResponse;
+import com.lms.content.service.AvailableTasksService;
 import com.lms.content.service.LessonService;
 import com.lms.content.service.TaskService;
 import jakarta.validation.Valid;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -33,10 +36,13 @@ public class LessonController {
 
     private final LessonService lessonService;
     private final TaskService taskService;
+    private final AvailableTasksService availableTasksService;
 
-    public LessonController(LessonService lessonService, TaskService taskService) {
+    public LessonController(LessonService lessonService, TaskService taskService,
+            AvailableTasksService availableTasksService) {
         this.lessonService = lessonService;
         this.taskService = taskService;
+        this.availableTasksService = availableTasksService;
     }
 
     @GetMapping("/courses/{courseId}/lessons")
@@ -136,6 +142,15 @@ public class LessonController {
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role) {
         return ResponseEntity.ok(lessonService.listAccess(id, userId, role));
+    }
+
+    @GetMapping("/lessons/{id}/available-tasks")
+    public ResponseEntity<List<TaskAvailabilityResult>> getAvailableTasks(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long studentId,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role) {
+        return ResponseEntity.ok(availableTasksService.compute(id, studentId, userId, role));
     }
 
     @GetMapping("/lessons/{lessonId}/tasks")
