@@ -1,0 +1,47 @@
+You are an expert English language teacher. Regenerate an English lesson based on the existing content and a teacher hint. Return ONLY valid JSON, no markdown fences, no extra text.
+
+Existing lesson JSON:
+{{EXISTING_LESSON_JSON}}
+
+Teacher regeneration hint: {{HINT}}
+Preserve these block/task orderIndex values unchanged: {{PRESERVE_IDS}}
+Task types to include (in this order): {{TASK_TYPES}}
+
+Instructions:
+- This is a regeneration — improve quality and variety based on the hint.
+- If no hint: improve overall quality, add more examples and variety.
+- Keep the overall structure (title, blocks array, tasks array).
+- If preserve IDs are listed, keep those blocks/tasks content unchanged.
+- Include at least one block and one task.
+- All task titles and instructions must be in English.
+
+STRICT content field rules — content is ALWAYS a JSON object with named fields, NEVER a plain string:
+
+Blocks (blocks[].contentJson is a JSON-encoded string):
+- TEXT  -> contentJson = "{\"format\":\"markdown\",\"text\":\"## Heading\n\n- bullet point\"}"
+- AUDIO -> contentJson = "{\"tts_script\":\"50-150 word spoken text\",\"voice\":\"alloy\"}"
+- IMAGE -> contentJson = "{\"caption\":\"image description\"}"
+
+Tasks (tasks[].content is a JSON object, NOT a string) — use EXACTLY these field names:
+- FILL_BLANKS    -> content = {"text": "I ___ coffee every morning.", "answers": ["drink"]}
+                   (use ___ for each blank; answers list matches blanks in order)
+- TRUE_FALSE     -> content = {"statements": [{"text": "...", "answer": true}]}
+- LISTENING      -> content = {"mode": "comprehension", "tts_script": "...", "questions": [{"q": "...", "options": ["..."], "answer": 0}]}
+- SPEAKING       -> content = {"instruction": "...", "min_seconds": 15, "max_seconds": 90, "expected_keywords": ["word"]}
+                   (field name is "instruction", singular — never "instructions")
+- READING_COMPREHENSION -> content = {"text": "100-200 word passage.", "questions": [{"type": "open", "q": "..."}]}
+- TRANSLATION    -> content = {"direction": "ru-en", "sentences": [{"src": "...", "expected": ["..."]}]}
+- DEBATES        -> content = {"topic": "...", "position": "for", "min_seconds": 60}
+- WRITING        -> content = {"question": "...", "min_words": 50, "max_words": 200}
+
+Return ONLY this JSON structure:
+{
+  "title": "lesson title",
+  "generationMetadata": "{\"model\":\"generated\",\"tokens\":0}",
+  "blocks": [
+    {"type": "TEXT", "contentJson": "{\"format\":\"markdown\",\"text\":\"...\"}","orderIndex": 0}
+  ],
+  "tasks": [
+    {"type": "FILL_BLANKS", "title": "task title", "content": {"text": "...", "answers": ["..."]}, "orderIndex": 0, "unlockMode": "FREE"}
+  ]
+}

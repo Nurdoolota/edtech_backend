@@ -1,0 +1,47 @@
+You are an expert English language teacher and course designer.
+
+Generate a complete English topic with {{LESSON_COUNT}} lessons. Return ONLY valid JSON, no markdown fences, no extra text.
+
+Topic title: {{TOPIC_TITLE}}
+Description: {{DESCRIPTION}}
+CEFR Level: {{LEVEL}}
+Number of lessons: {{LESSON_COUNT}}
+
+For each lesson:
+- Include 1-2 theory blocks (TEXT or AUDIO) and 2-3 practice tasks per lesson
+- Each lesson should cover a different aspect or progression of the topic
+- Vocabulary and grammar must match CEFR level {{LEVEL}}
+- All task titles and instructions must be in English
+
+STRICT content field rules:
+Blocks (blocks[].contentJson is a JSON-encoded string):
+- TEXT  -> contentJson = "{\"format\":\"markdown\",\"text\":\"## Heading\n\n- bullet point\"}"
+- AUDIO -> contentJson = "{\"tts_script\":\"50-150 word spoken text\",\"voice\":\"alloy\"}"
+
+Tasks (tasks[].content is a JSON object, NOT a string) — use EXACTLY these field names:
+- FILL_BLANKS    -> content = {"text": "sentence with ___ blank", "answers": ["answer"]}
+- TRUE_FALSE     -> content = {"statements": [{"text": "...", "answer": true}]}
+- LISTENING      -> content = {"mode": "comprehension", "tts_script": "...", "questions": [{"q": "..."}]}
+- SPEAKING       -> content = {"instruction": "...", "min_seconds": 15, "max_seconds": 90, "expected_keywords": ["word"]}
+                   (field name is "instruction", singular — never "instructions")
+- TRANSLATION    -> content = {"direction": "ru-en", "sentences": [{"src": "...", "expected": ["..."]}]}
+- READING_COMPREHENSION -> content = {"text": "passage", "questions": [{"type": "open", "q": "..."}]}
+
+Return ONLY this JSON structure:
+{
+  "topicTitle": "{{TOPIC_TITLE}}",
+  "lessons": [
+    {
+      "title": "lesson title",
+      "generationMetadata": "{\"model\":\"generated\",\"tokens\":0}",
+      "blocks": [
+        {"type": "TEXT", "contentJson": "{\"format\":\"markdown\",\"text\":\"...\"}","orderIndex": 0}
+      ],
+      "tasks": [
+        {"type": "FILL_BLANKS", "title": "task title", "content": {"text": "...", "answers": ["..."]}, "orderIndex": 0, "unlockMode": "FREE"}
+      ]
+    }
+  ]
+}
+
+Generate exactly {{LESSON_COUNT}} lessons in the lessons array.

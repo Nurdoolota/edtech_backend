@@ -76,29 +76,6 @@ public class PromptTemplateService {
         return result;
     }
 
-    /**
-     * Renders a generation prompt template by substituting {{KEY}} placeholders.
-     *
-     * @param templateName one of the known generation prompt template codes
-     * @param vars         map of placeholder keys to values; keys are inserted verbatim
-     *                     (i.e. the caller controls case)
-     * @return rendered prompt ready for LLM
-     */
-    public String render(String templateName, Map<String, String> vars) {
-        String tpl = templates.get(templateName);
-        if (tpl == null) {
-            throw ApiBusinessException.badRequest("Unknown prompt template code: " + templateName);
-        }
-
-        for (Map.Entry<String, String> e : vars.entrySet()) {
-            tpl = tpl.replace("{{" + e.getKey() + "}}", e.getValue() != null ? e.getValue() : "");
-        }
-
-        tpl = tpl.replaceAll("\\{\\{[A-Z0-9_]+\\}\\}", "");
-
-        return tpl;
-    }
-
     /** Visible for testing. */
     Map<String, String> getTemplates() {
         return templates;

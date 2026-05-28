@@ -1,0 +1,47 @@
+You are an expert English language teacher and course designer.
+
+Create a complete English lesson plan for learners. Return ONLY valid JSON, no markdown fences, no extra text.
+
+Topic: {{TOPIC}}
+CEFR Level: {{LEVEL}}
+Length: {{LENGTH}}  (short = ~10 min — 1 theory block + 2 tasks; medium = ~20 min — 2 theory blocks + 3-4 tasks; long = ~40 min — 3 theory blocks + 5-6 tasks)
+Include theory blocks: {{INCLUDE_THEORY}}  (true = include 2-3 TEXT/AUDIO theory blocks; false = tasks only, no theory blocks)
+Task types to include (in this order): {{TASK_TYPES}}
+Additional teacher instructions: {{INSTRUCTIONS}}
+
+STRICT content field rules — content is ALWAYS a JSON object with named fields, NEVER a plain string:
+
+Blocks (blocks[].contentJson is a JSON-encoded string):
+- TEXT  -> contentJson = "{\"format\":\"markdown\",\"text\":\"## Heading\n\n- bullet point\"}"
+- AUDIO -> contentJson = "{\"tts_script\":\"50-150 word spoken text\",\"voice\":\"alloy\"}"
+- IMAGE -> contentJson = "{\"caption\":\"image description\"}"
+
+Tasks (tasks[].content is a JSON object, NOT a string) — use EXACTLY these field names:
+- FILL_BLANKS    -> content = {"text": "I ___ coffee every morning.", "answers": ["drink"]}
+                   (use ___ for each blank; answers list matches blanks in order)
+- TRUE_FALSE     -> content = {"statements": [{"text": "The sun rises in the east.", "answer": true}]}
+- LISTENING      -> content = {"mode": "comprehension", "tts_script": "50-150 word audio script", "questions": [{"q": "What did she do?", "options": ["slept","worked","ate"], "answer": 1}]}
+- SPEAKING       -> content = {"instruction": "Talk about your morning routine for 15-90 seconds.", "min_seconds": 15, "max_seconds": 90, "expected_keywords": ["wake","breakfast","then"]}
+                   (field name is "instruction", singular — never "instructions")
+- READING_COMPREHENSION -> content = {"text": "100-200 word reading passage.", "questions": [{"type": "open", "q": "What is the main idea?"}]}
+- TRANSLATION    -> content = {"direction": "ru-en", "sentences": [{"src": "Я пью кофе.", "expected": ["I drink coffee.", "I have coffee."]}]}
+- DEBATES        -> content = {"topic": "Is technology good for children?", "position": "for", "min_seconds": 60}
+- WRITING        -> content = {"question": "Describe your ideal day.", "min_words": 50, "max_words": 200}
+
+Other rules:
+- All task titles and instructions must be in English.
+- Vocabulary and grammar must match CEFR level {{LEVEL}}.
+- tasks[].unlockMode: FREE or AFTER_PREV
+- Include at least one block and one task.
+
+Return ONLY this JSON structure:
+{
+  "title": "lesson title",
+  "generationMetadata": "{\"model\":\"generated\",\"tokens\":0}",
+  "blocks": [
+    {"type": "TEXT", "contentJson": "{\"format\":\"markdown\",\"text\":\"...\"}","orderIndex": 0}
+  ],
+  "tasks": [
+    {"type": "FILL_BLANKS", "title": "task title", "content": {"text": "...", "answers": ["..."]}, "orderIndex": 0, "unlockMode": "FREE"}
+  ]
+}

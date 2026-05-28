@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lms.ai.config.LlmProperties;
 import com.lms.ai.dto.AiEvaluateRequest;
 import com.lms.ai.dto.AiEvaluateRequest.AiOptions;
 import com.lms.ai.dto.AiEvaluateResponse;
@@ -32,11 +33,17 @@ class AiEvaluationServiceTest {
     @Mock
     private PromptTemplateService promptTemplateService;
 
+    @Mock
+    private AiCallLogger callLogger;
+
     private AiEvaluationService service;
 
     @BeforeEach
     void setUp() {
-        service = new AiEvaluationService(llmClient, promptTemplateService, new ObjectMapper());
+        LlmProperties llmProperties = new LlmProperties(
+                "http://localhost:1234/v1", "test-model", "test-key", 28);
+        service = new AiEvaluationService(
+                llmClient, promptTemplateService, new ObjectMapper(), callLogger, llmProperties);
     }
 
     private AiEvaluateRequest buildRequest(String taskType) {

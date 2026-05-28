@@ -2,9 +2,11 @@ package com.lms.ai.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lms.ai.config.LlmProperties;
 import com.lms.ai.dto.AiEvaluateRequest;
 import com.lms.ai.dto.AiEvaluateResponse;
 import com.lms.ai.exception.ApiBusinessException;
+import com.lms.ai.exception.AiServiceException;
 import com.lms.ai.llm.LlmClient;
 import com.lms.ai.prompt.PromptTemplateService;
 import java.math.BigDecimal;
@@ -21,16 +23,24 @@ public class AiEvaluationService {
     private static final int DEFAULT_MAX_TOKENS = 2048;
     private static final double DEFAULT_TEMPERATURE = 0.2;
 
+    private static final String EVALUATE_ENDPOINT = "/internal/ai/evaluate";
+
     private final LlmClient llmClient;
     private final PromptTemplateService promptTemplateService;
     private final ObjectMapper objectMapper;
+    private final AiCallLogger callLogger;
+    private final LlmProperties llmProperties;
 
     public AiEvaluationService(LlmClient llmClient,
                                 PromptTemplateService promptTemplateService,
-                                ObjectMapper objectMapper) {
+                                ObjectMapper objectMapper,
+                                AiCallLogger callLogger,
+                                LlmProperties llmProperties) {
         this.llmClient = llmClient;
         this.promptTemplateService = promptTemplateService;
         this.objectMapper = objectMapper;
+        this.callLogger = callLogger;
+        this.llmProperties = llmProperties;
     }
 
     public AiEvaluateResponse evaluate(AiEvaluateRequest request) {
@@ -45,9 +55,25 @@ public class AiEvaluationService {
         log.info("Evaluating task [type={}, template={}, temperature={}]",
                 request.taskType(), request.promptTemplateCode(), temperature);
 
-        String rawContent = llmClient.complete(systemPrompt, temperature, maxTokens);
-
-        return parseResponse(rawContent, request.taskType());
+        long start = System.currentTimeMillis();
+        String status = "SUCCESS";
+        String error = null;
+        try {
+            String rawContent = llmClient.complete(systemPrompt, temperature, maxTokens);
+            return parseResponse(rawContent, request.taskType());
+        } catch (AiServiceException e) {
+            status = "ERROR";
+            error = e.getMessage();
+            throw e;
+        } catch (ApiBusinessException e) {
+            status = "ERROR";
+            error = e.getMessage();
+            throw e;
+        } finally {
+            int latencyMs = (int) (System.currentTimeMillis() - start);
+            callLogger.log(new AiCallEntry(null, EVALUATE_ENDPOINT, llmProperties.model(),
+                    latencyMs, null, null, status, error));
+        }
     }
 
     private AiEvaluateResponse parseResponse(String raw, String taskType) {

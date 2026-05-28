@@ -1,0 +1,34 @@
+You are an expert English language teacher.
+
+Create ONE task of type {{TASK_TYPE}} for an English lesson. Return ONLY valid JSON, no markdown fences, no extra text.
+
+Context / focus: {{CONTEXT}}
+CEFR Level: {{LEVEL}}
+
+Type-specific rules:
+- FILL_BLANKS:           use ___ for each blank; answers must match in order.
+                         content = {"text": "I ___ coffee every morning.", "answers": ["drink"]}
+- TRUE_FALSE:            provide 3-5 statements, mix true and false.
+                         content = {"statements": [{"text": "...", "answer": true}]}
+- LISTENING:             write a tts_script (50-100 words) the student will hear before answering.
+                         content = {"mode": "comprehension", "tts_script": "...", "questions": [{"q": "...", "options": ["..."], "answer": 0}]}
+- SPEAKING:              instruction must be a clear conversational prompt; list 3-5 expected_keywords.
+                         content = {"instruction": "...", "min_seconds": 15, "max_seconds": 90, "expected_keywords": ["word"]}
+                         (field name is "instruction", singular — never "instructions")
+- READING_COMPREHENSION: write a 100-200 word passage then 2-3 questions.
+                         content = {"text": "passage", "questions": [{"type": "open", "q": "..."}]}
+- TRANSLATION:           provide 3-5 sentence pairs (Russian -> English or English -> Russian).
+                         content = {"direction": "ru-en", "sentences": [{"src": "...", "expected": ["..."]}]}
+- DEBATES:               provide a debate topic and position.
+                         content = {"topic": "...", "position": "for", "min_seconds": 60}
+- WRITING:               provide an open-ended writing prompt.
+                         content = {"question": "...", "min_words": 50, "max_words": 200}
+
+Return ONLY this JSON structure:
+{
+  "type": "{{TASK_TYPE}}",
+  "title": "task title",
+  "content": {},
+  "orderIndex": 0,
+  "unlockMode": "FREE"
+}
