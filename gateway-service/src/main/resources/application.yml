@@ -36,6 +36,9 @@ cors:
 
 rate-limit:
   requests-per-second: ${RATE_LIMIT_RPS:20}
+  forgot-password-per-ip-hour: ${RATE_LIMIT_FORGOT_PASSWORD_PER_IP_HOUR:3}
+  import-per-user-hour: ${RATE_LIMIT_IMPORT_PER_USER_HOUR:5}
+  ai-generate-per-user-hour: ${RATE_LIMIT_AI_GENERATE_PER_USER_HOUR:20}
 
 management:
   endpoints:
