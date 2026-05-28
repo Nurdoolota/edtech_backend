@@ -6,6 +6,19 @@ spring:
     name: ai-service
   jackson:
     default-property-inclusion: non_null
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/lms}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:qwerty}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    open-in-view: false
 
 llm:
   api-base-url: ${LLM_API_BASE_URL:http://localhost:1234/v1}
