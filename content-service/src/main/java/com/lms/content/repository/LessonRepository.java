@@ -18,4 +18,18 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
 
     @Query("SELECT MAX(l.orderIndex) FROM Lesson l WHERE l.topicId = :topicId")
     Optional<Integer> findMaxOrderIndexByTopicId(@Param("topicId") Long topicId);
+
+    @Query(value = """
+            SELECT l.id, l.topic_id, l.title, l.status, l.order_index,
+                   l.unlock_mode, l.visible,
+                   COUNT(DISTINCT lb.id) AS blocks_count,
+                   COUNT(DISTINCT t.id)  AS tasks_count
+            FROM lessons l
+            LEFT JOIN lesson_blocks lb ON lb.lesson_id = l.id
+            LEFT JOIN tasks t           ON t.lesson_id  = l.id
+            WHERE l.course_id = :courseId
+            GROUP BY l.id
+            ORDER BY l.order_index
+            """, nativeQuery = true)
+    List<Object[]> findLessonsWithCountsByCourseId(@Param("courseId") Long courseId);
 }

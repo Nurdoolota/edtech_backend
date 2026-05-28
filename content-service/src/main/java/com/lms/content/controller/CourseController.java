@@ -2,12 +2,16 @@ package com.lms.content.controller;
 
 import com.lms.content.dto.PagedResponse;
 import com.lms.content.dto.course.CourseResponse;
+import com.lms.content.dto.course.CourseStatsResponse;
+import com.lms.content.dto.course.CourseTreeResponse;
 import com.lms.content.dto.course.CreateCourseRequest;
 import com.lms.content.dto.course.UpdateCourseRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import com.lms.content.security.JwtUserPrincipal;
 import com.lms.content.service.CourseService;
+import com.lms.content.service.CourseStatsService;
+import com.lms.content.service.CourseTreeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,9 +33,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class CourseController {
 
     private final CourseService courseService;
+    private final CourseTreeService courseTreeService;
+    private final CourseStatsService courseStatsService;
 
-    public CourseController(CourseService courseService) {
+    public CourseController(CourseService courseService,
+            CourseTreeService courseTreeService,
+            CourseStatsService courseStatsService) {
         this.courseService = courseService;
+        this.courseTreeService = courseTreeService;
+        this.courseStatsService = courseStatsService;
     }
 
     @GetMapping
@@ -74,6 +84,22 @@ public class CourseController {
             @AuthenticationPrincipal JwtUserPrincipal principal) {
         courseService.delete(id, principal);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/tree")
+    @Operation(summary = "Get full course tree (topics → lessons with block/task counts)")
+    public CourseTreeResponse getTree(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtUserPrincipal principal) {
+        return courseTreeService.getTree(id, principal);
+    }
+
+    @GetMapping("/{id}/stats")
+    @Operation(summary = "Get course statistics")
+    public CourseStatsResponse getStats(
+            @PathVariable Long id,
+            @AuthenticationPrincipal JwtUserPrincipal principal) {
+        return courseStatsService.getStats(id, principal);
     }
 
 }
