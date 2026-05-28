@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: content-service
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/lms}
     username: ${DB_USERNAME:postgres}
@@ -39,3 +43,9 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+content:
+  import:
+    max-size-mb: ${IMPORT_MAX_SIZE_MB:50}
+    max-unzipped-mb: ${IMPORT_MAX_UNZIPPED_MB:200}
+    max-files: ${IMPORT_MAX_FILES:5000}
