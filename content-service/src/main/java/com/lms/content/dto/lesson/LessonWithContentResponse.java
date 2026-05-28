@@ -1,5 +1,6 @@
 package com.lms.content.dto.lesson;
 
+import com.lms.content.dto.block.BlockResponse;
 import java.time.Instant;
 import java.util.List;
 
@@ -18,6 +19,6 @@ public record LessonWithContentResponse(
         int tasksCount,
         Instant createdAt,
         Instant publishedAt,
-        List<Object> blocks,
+        List<BlockResponse> blocks,
         List<Object> tasks
 ) {}

@@ -1,5 +1,6 @@
 package com.lms.content.service;
 
+import com.lms.content.dto.block.BlockResponse;
 import com.lms.content.dto.lesson.GrantAccessRequest;
 import com.lms.content.dto.lesson.LessonAccessEntryResponse;
 import com.lms.content.dto.lesson.LessonAccessResponse;
@@ -9,11 +10,13 @@ import com.lms.content.dto.lesson.LessonWithContentResponse;
 import com.lms.content.dto.lesson.TaskOrderResponse;
 import com.lms.content.entity.Lesson;
 import com.lms.content.entity.LessonAccess;
+import com.lms.content.entity.LessonBlock;
 import com.lms.content.entity.Task;
 import com.lms.content.entity.Topic;
 import com.lms.content.exception.ApiBusinessException;
 import com.lms.content.repository.CourseRepository;
 import com.lms.content.repository.LessonAccessRepository;
+import com.lms.content.repository.LessonBlockRepository;
 import com.lms.content.repository.LessonRepository;
 import com.lms.content.repository.TaskRepository;
 import com.lms.content.repository.TopicRepository;
@@ -31,6 +34,7 @@ public class LessonService {
 
     private final LessonRepository lessonRepository;
     private final LessonAccessRepository lessonAccessRepository;
+    private final LessonBlockRepository lessonBlockRepository;
     private final TopicRepository topicRepository;
     private final CourseRepository courseRepository;
     private final CourseAccessChecker courseAccessChecker;
@@ -38,12 +42,14 @@ public class LessonService {
 
     public LessonService(LessonRepository lessonRepository,
             LessonAccessRepository lessonAccessRepository,
+            LessonBlockRepository lessonBlockRepository,
             TopicRepository topicRepository,
             CourseRepository courseRepository,
             CourseAccessChecker courseAccessChecker,
             TaskRepository taskRepository) {
         this.lessonRepository = lessonRepository;
         this.lessonAccessRepository = lessonAccessRepository;
+        this.lessonBlockRepository = lessonBlockRepository;
         this.topicRepository = topicRepository;
         this.courseRepository = courseRepository;
         this.courseAccessChecker = courseAccessChecker;
@@ -217,23 +223,30 @@ public class LessonService {
     }
 
     private LessonResponse toResponse(Lesson l) {
+        int blocksCount = (int) lessonBlockRepository.countByLessonId(l.getId());
         return new LessonResponse(
                 l.getId(), l.getCourseId(), l.getTopicId(),
                 l.getOrderIndex(), l.getGlobalOrder(),
                 l.getTitle(), l.getStatus(),
                 l.getPublishMode(), l.getUnlockMode(),
-                l.isVisible(), 0, 0,
+                l.isVisible(), blocksCount, 0,
                 l.getCreatedAt(), l.getPublishedAt());
     }
 
     private LessonWithContentResponse toWithContent(Lesson l) {
+        List<BlockResponse> blocks = lessonBlockRepository
+                .findByLessonIdOrderByOrderIndex(l.getId())
+                .stream()
+                .map(b -> new BlockResponse(b.getId(), b.getLessonId(), b.getOrderIndex(),
+                        b.getType(), b.getContentJson(), b.isAiGenerated(), b.getCreatedAt()))
+                .collect(Collectors.toList());
         return new LessonWithContentResponse(
                 l.getId(), l.getCourseId(), l.getTopicId(),
                 l.getOrderIndex(), l.getGlobalOrder(),
                 l.getTitle(), l.getStatus(),
                 l.getPublishMode(), l.getUnlockMode(),
-                l.isVisible(), 0, 0,
+                l.isVisible(), blocks.size(), 0,
                 l.getCreatedAt(), l.getPublishedAt(),
-                List.of(), List.of());
+                blocks, List.of());
     }
 }
