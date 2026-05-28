@@ -1,6 +1,7 @@
 package com.lms.ai.exception;
 
 import com.lms.ai.dto.ApiError;
+import com.lms.ai.service.AiRetryExecutor;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -25,6 +26,20 @@ public class GlobalExceptionHandler {
                 .body(new ApiError(ex.getCode(), ex.getMessage(), MDC.get("requestId")));
     }
 
+    /**
+     * Maps {@link AiServiceException} (LLM call exhausted / JSON repair failed) to HTTP 502.
+     * API keys are redacted from logged messages to prevent secret leakage.
+     */
+    @ExceptionHandler(AiServiceException.class)
+    public ResponseEntity<ApiError> handleAiService(AiServiceException ex) {
+        String safeMessage = AiRetryExecutor.redactApiKey(ex.getMessage());
+        log.error("AI service error [BAD_GATEWAY]: {}", safeMessage);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(new ApiError("BAD_GATEWAY",
+                        safeMessage != null ? safeMessage : "LLM returned unparseable JSON after retries",
+                        MDC.get("requestId")));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
         String details = ex.getBindingResult().getFieldErrors().stream()
@@ -36,7 +51,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex, HttpServletRequest request) {
-        log.error("Unexpected error on {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+        String safeMessage = AiRetryExecutor.redactApiKey(ex.getMessage());
+        log.error("Unexpected error on {}: {}", request.getRequestURI(), safeMessage, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiError("INTERNAL_ERROR", "An unexpected error occurred.", MDC.get("requestId")));
     }

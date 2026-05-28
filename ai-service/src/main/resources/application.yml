@@ -13,6 +13,11 @@ llm:
   api-key: ${LLM_API_KEY:lm-studio}
   timeout-seconds: ${LLM_TIMEOUT_SECONDS:28}
 
+ai:
+  max-retries: ${AI_MAX_RETRIES:3}
+  request-timeout-seconds: ${AI_REQUEST_TIMEOUT_SECONDS:60}
+  provider: ${AI_PROVIDER:local}
+
 management:
   endpoints:
     web:
