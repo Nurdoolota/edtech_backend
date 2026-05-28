@@ -138,7 +138,7 @@ class LearningControllerTest {
     }
 
     private TaskResultResponse sampleResponse(ResultStatus status, BigDecimal score) {
-        return new TaskResultResponse(1L, 1L, USER_ID, "[\"apple\"]", "Correct!", score,
-                status, Instant.now(), Instant.now());
+        return new TaskResultResponse(1L, 1L, USER_ID, "[\"apple\"]", "Correct!",
+                null, null, null, null, score, null, null, status, Instant.now(), Instant.now());
     }
 }

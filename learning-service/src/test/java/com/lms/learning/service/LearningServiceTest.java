@@ -59,7 +59,7 @@ class LearningServiceTest {
         when(taskResultRepository.findByStudentIdAndTaskId(10L, 1L)).thenReturn(Optional.empty());
         when(checkerFactory.getChecker(TaskType.FILL_BLANKS)).thenReturn(keyBasedChecker);
         when(keyBasedChecker.check(any(), any()))
-                .thenReturn(new EvaluationResult(BigDecimal.valueOf(100), "Correct!"));
+                .thenReturn(new EvaluationResult(BigDecimal.valueOf(100), "Correct!", null));
 
         TaskResult saved = resultWith(ResultStatus.CHECKED, BigDecimal.valueOf(100));
         when(taskResultRepository.save(any())).thenReturn(saved);

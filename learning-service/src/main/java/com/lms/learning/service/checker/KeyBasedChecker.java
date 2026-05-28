@@ -48,15 +48,15 @@ public class KeyBasedChecker implements TaskChecker {
 
         if (studentAnswers.size() != expectedAnswers.size()) {
             return new EvaluationResult(BigDecimal.ZERO,
-                    "Expected " + expectedAnswers.size() + " answers but got " + studentAnswers.size());
+                    "Expected " + expectedAnswers.size() + " answers but got " + studentAnswers.size(), null);
         }
         for (int i = 0; i < expectedAnswers.size(); i++) {
             if (!expectedAnswers.get(i).equalsIgnoreCase(studentAnswers.get(i).trim())) {
                 return new EvaluationResult(BigDecimal.ZERO,
-                        "Incorrect. Expected: " + String.join(", ", expectedAnswers));
+                        "Incorrect. Expected: " + String.join(", ", expectedAnswers), null);
             }
         }
-        return new EvaluationResult(BigDecimal.valueOf(100), "All answers correct.");
+        return new EvaluationResult(BigDecimal.valueOf(100), "All answers correct.", null);
     }
 
     private EvaluationResult checkTrueFalse(Map<String, Object> content, String answerContent)
@@ -67,14 +67,14 @@ public class KeyBasedChecker implements TaskChecker {
 
         if (studentOptions.size() != correctOptions.size()) {
             return new EvaluationResult(BigDecimal.ZERO,
-                    "Expected " + correctOptions.size() + " answers but got " + studentOptions.size());
+                    "Expected " + correctOptions.size() + " answers but got " + studentOptions.size(), null);
         }
         for (int i = 0; i < correctOptions.size(); i++) {
             if (!correctOptions.get(i).equalsIgnoreCase(studentOptions.get(i).trim())) {
-                return new EvaluationResult(BigDecimal.ZERO, "One or more answers are incorrect.");
+                return new EvaluationResult(BigDecimal.ZERO, "One or more answers are incorrect.", null);
             }
         }
-        return new EvaluationResult(BigDecimal.valueOf(100), "All answers correct.");
+        return new EvaluationResult(BigDecimal.valueOf(100), "All answers correct.", null);
     }
 
     @SuppressWarnings("unchecked")

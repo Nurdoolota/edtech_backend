@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lms.learning.dto.ai.AiEvaluateRequest;
 import com.lms.learning.dto.ai.AiEvaluateResponse;
 import com.lms.learning.entity.Task;
@@ -42,7 +43,7 @@ class AiBasedCheckerTest {
         when(bodySpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.body(eq(AiEvaluateResponse.class))).thenReturn(aiResponse);
 
-        AiBasedChecker checker = new AiBasedChecker(restClient);
+        AiBasedChecker checker = new AiBasedChecker(restClient, new ObjectMapper());
         Task task = taskWith(TaskType.TEXT, Map.of("sourceText", "IoT article", "questions",
                 java.util.List.of("What is IoT?"), "level", "B2"));
 
@@ -64,7 +65,7 @@ class AiBasedCheckerTest {
         when(bodySpec.body(any(AiEvaluateRequest.class))).thenReturn(bodySpec);
         when(bodySpec.retrieve()).thenThrow(new RestClientException("connection refused"));
 
-        AiBasedChecker checker = new AiBasedChecker(restClient);
+        AiBasedChecker checker = new AiBasedChecker(restClient, new ObjectMapper());
         Task task = taskWith(TaskType.TRANSLATION, Map.of(
                 "sourceText", "Some text", "instructions", "Translate"));
 

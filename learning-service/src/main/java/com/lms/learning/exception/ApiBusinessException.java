@@ -31,6 +31,10 @@ public class ApiBusinessException extends RuntimeException {
         return new ApiBusinessException("SERVICE_UNAVAILABLE", 503, message);
     }
 
+    public static ApiBusinessException validationError(String message) {
+        return new ApiBusinessException("VALIDATION_ERROR", 422, message);
+    }
+
     public String getCode() { return code; }
 
     public int getHttpStatus() { return httpStatus; }

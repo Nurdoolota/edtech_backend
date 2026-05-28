@@ -15,6 +15,7 @@ import com.lms.learning.repository.TaskRepository;
 import com.lms.learning.repository.TaskResultRepository;
 import com.lms.learning.service.checker.EvaluationResult;
 import com.lms.learning.service.checker.TaskCheckerFactory;
+import java.math.BigDecimal;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -65,12 +66,16 @@ public class LearningService {
         EvaluationResult evaluation = checkerFactory.getChecker(task.getType())
                 .check(task, answerJson);
 
+        int aiScore = clampToInt(evaluation.score());
+
         TaskResult result = existing.orElseGet(TaskResult::new);
         result.setTaskId(taskId);
         result.setStudentId(studentId);
         result.setAnswerContent(request.answerContent());
-        result.setScore(evaluation.score());
+        result.setAiScore(aiScore);
+        result.setAiBreakdown(evaluation.aiBreakdown());
         result.setAiFeedback(evaluation.feedback());
+        result.setScore(effectiveScore(aiScore, result.getTeacherScore()));
         result.setStatus(ResultStatus.CHECKED);
 
         return mapper.toResponse(taskResultRepository.save(result));
@@ -115,10 +120,16 @@ public class LearningService {
         TaskResult result = taskResultRepository.findById(resultId)
                 .orElseThrow(() -> ApiBusinessException.notFound("TaskResult", resultId));
 
-        result.setScore(request.score());
-        if (request.comment() != null && !request.comment().isBlank()) {
-            result.setAiFeedback(request.comment());
+        BigDecimal scoreDecimal = request.score();
+        if (scoreDecimal.compareTo(BigDecimal.ZERO) < 0
+                || scoreDecimal.compareTo(BigDecimal.valueOf(100)) > 0) {
+            throw ApiBusinessException.validationError("score must be in [0, 100]");
         }
+
+        int teacherScore = scoreDecimal.intValue();
+        result.setTeacherScore(teacherScore);
+        result.setTeacherFeedback(request.comment());
+        result.setScore(effectiveScore(result.getAiScore(), teacherScore));
         result.setStatus(ResultStatus.VALIDATED_BY_TEACHER);
 
         return mapper.toResponse(taskResultRepository.save(result));
@@ -129,5 +140,17 @@ public class LearningService {
                 page.getContent().stream().map(mapper::toResponse).toList(),
                 page.getTotalElements(),
                 page.getTotalPages());
+    }
+
+    private static BigDecimal effectiveScore(Integer aiScore, Integer teacherScore) {
+        int ai  = aiScore      != null ? aiScore      : 0;
+        int tch = teacherScore != null ? teacherScore : 0;
+        return BigDecimal.valueOf(Math.max(ai, tch));
+    }
+
+    private static int clampToInt(BigDecimal score) {
+        if (score == null) return 0;
+        int v = (int) Math.round(score.doubleValue());
+        return Math.max(0, Math.min(100, v));
     }
 }

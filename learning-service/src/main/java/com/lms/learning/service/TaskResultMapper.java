@@ -23,7 +23,13 @@ public class TaskResultMapper {
                 tr.getStudentId(),
                 answerContentToString(tr.getAnswerContent()),
                 tr.getAiFeedback(),
+                tr.getAiScore(),
+                tr.getAiBreakdown(),
+                tr.getTeacherScore(),
+                tr.getTeacherFeedback(),
                 tr.getScore(),
+                tr.getTranscript(),
+                tr.getMediaId(),
                 tr.getStatus(),
                 tr.getCreatedAt(),
                 tr.getUpdatedAt());

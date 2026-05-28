@@ -37,6 +37,24 @@ public class TaskResult {
     @Column(name = "ai_feedback")
     private String aiFeedback;
 
+    @Column(name = "ai_score")
+    private Integer aiScore;
+
+    @Column(name = "ai_breakdown", columnDefinition = "jsonb")
+    private String aiBreakdown;
+
+    @Column(name = "teacher_score")
+    private Integer teacherScore;
+
+    @Column(name = "teacher_feedback")
+    private String teacherFeedback;
+
+    @Column(name = "transcript")
+    private String transcript;
+
+    @Column(name = "media_id", length = 255)
+    private String mediaId;
+
     @Column(name = "score", precision = 5, scale = 2)
     private BigDecimal score;
 
@@ -71,6 +89,30 @@ public class TaskResult {
     public String getAiFeedback() { return aiFeedback; }
 
     public void setAiFeedback(String aiFeedback) { this.aiFeedback = aiFeedback; }
+
+    public Integer getAiScore() { return aiScore; }
+
+    public void setAiScore(Integer aiScore) { this.aiScore = aiScore; }
+
+    public String getAiBreakdown() { return aiBreakdown; }
+
+    public void setAiBreakdown(String aiBreakdown) { this.aiBreakdown = aiBreakdown; }
+
+    public Integer getTeacherScore() { return teacherScore; }
+
+    public void setTeacherScore(Integer teacherScore) { this.teacherScore = teacherScore; }
+
+    public String getTeacherFeedback() { return teacherFeedback; }
+
+    public void setTeacherFeedback(String teacherFeedback) { this.teacherFeedback = teacherFeedback; }
+
+    public String getTranscript() { return transcript; }
+
+    public void setTranscript(String transcript) { this.transcript = transcript; }
+
+    public String getMediaId() { return mediaId; }
+
+    public void setMediaId(String mediaId) { this.mediaId = mediaId; }
 
     public BigDecimal getScore() { return score; }
 

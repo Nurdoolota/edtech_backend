@@ -10,7 +10,13 @@ public record TaskResultResponse(
         Long studentId,
         String answerContent,
         String aiFeedback,
+        Integer aiScore,
+        String aiBreakdown,
+        Integer teacherScore,
+        String teacherFeedback,
         BigDecimal score,
+        String transcript,
+        String mediaId,
         ResultStatus status,
         Instant createdAt,
         Instant updatedAt) {}

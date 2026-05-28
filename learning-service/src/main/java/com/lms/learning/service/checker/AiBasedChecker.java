@@ -1,5 +1,7 @@
 package com.lms.learning.service.checker;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lms.learning.dto.ai.AiEvaluateRequest;
 import com.lms.learning.dto.ai.AiEvaluateRequest.AiOptions;
 import com.lms.learning.dto.ai.AiEvaluateResponse;
@@ -27,9 +29,11 @@ public class AiBasedChecker implements TaskChecker {
     private static final String AI_EVALUATE_PATH = "/internal/ai/evaluate";
 
     private final RestClient aiRestClient;
+    private final ObjectMapper objectMapper;
 
-    public AiBasedChecker(@Qualifier("aiRestClient") RestClient aiRestClient) {
+    public AiBasedChecker(@Qualifier("aiRestClient") RestClient aiRestClient, ObjectMapper objectMapper) {
         this.aiRestClient = aiRestClient;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -64,7 +68,17 @@ public class AiBasedChecker implements TaskChecker {
 
         BigDecimal score = response.score() != null ? response.score() : BigDecimal.ZERO;
         String feedback = response.feedback() != null ? response.feedback() : "";
-        return new EvaluationResult(score, feedback);
+        String breakdown = serializeBreakdown(response);
+        return new EvaluationResult(score, feedback, breakdown);
+    }
+
+    private String serializeBreakdown(AiEvaluateResponse response) {
+        try {
+            return objectMapper.writeValueAsString(response);
+        } catch (JsonProcessingException ex) {
+            log.warn("Failed to serialize AI response for breakdown: {}", ex.getMessage());
+            return null;
+        }
     }
 
     private String resolvePromptCode(Task task) {
