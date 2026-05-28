@@ -1,5 +1,7 @@
 package com.lms.content.service;
 
+import com.lms.content.dto.lesson.LessonRequest;
+import com.lms.content.dto.lesson.LessonResponse;
 import com.lms.content.dto.lesson.LessonSummaryResponse;
 import com.lms.content.dto.topic.TopicRequest;
 import com.lms.content.dto.topic.TopicResponse;
@@ -12,8 +14,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,11 +24,14 @@ public class TopicService {
 
     private final TopicRepository topicRepository;
     private final CourseAccessChecker courseAccessChecker;
+    private final LessonService lessonService;
 
     public TopicService(TopicRepository topicRepository,
-            CourseAccessChecker courseAccessChecker) {
+            CourseAccessChecker courseAccessChecker,
+            @Lazy LessonService lessonService) {
         this.topicRepository = topicRepository;
         this.courseAccessChecker = courseAccessChecker;
+        this.lessonService = lessonService;
     }
 
     public List<TopicResponse> listByCourse(Long courseId, Long userId, String role) {
@@ -95,8 +99,9 @@ public class TopicService {
         topicRepository.delete(topic);
     }
 
-    public ResponseEntity<Void> createLessonInTopic(Long topicId, Long userId, String role) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    @Transactional
+    public LessonResponse createLessonInTopic(Long topicId, LessonRequest request, Long userId, String role) {
+        return lessonService.createInTopic(topicId, request, userId, role);
     }
 
     @Transactional

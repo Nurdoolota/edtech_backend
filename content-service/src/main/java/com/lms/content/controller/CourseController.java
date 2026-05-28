@@ -1,8 +1,11 @@
 package com.lms.content.controller;
 
+import com.lms.content.dto.PagedResponse;
 import com.lms.content.dto.course.CourseResponse;
 import com.lms.content.dto.course.CreateCourseRequest;
 import com.lms.content.dto.course.UpdateCourseRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import com.lms.content.security.JwtUserPrincipal;
 import com.lms.content.service.CourseService;
 import io.swagger.v3.oas.annotations.Operation;

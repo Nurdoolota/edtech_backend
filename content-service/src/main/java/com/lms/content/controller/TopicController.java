@@ -81,14 +81,6 @@ public class TopicController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/topics/{topicId}/lessons")
-    public ResponseEntity<Void> createLesson(
-            @PathVariable Long topicId,
-            @RequestHeader("X-User-Id") Long userId,
-            @RequestHeader("X-User-Role") String role) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
-    }
-
     @PatchMapping("/courses/{courseId}/topics/reorder")
     public ResponseEntity<List<TopicResponse>> reorder(
             @PathVariable Long courseId,

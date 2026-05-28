@@ -34,6 +34,12 @@ public class Task {
     @Column(columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> content;
 
+    @Column(name = "lesson_id")
+    private Long lessonId;
+
+    @Column(name = "order_index", nullable = false)
+    private int orderIndex = 0;
+
     @Column(name = "prompt_template_id")
     private Long promptTemplateId;
 
@@ -60,6 +66,14 @@ public class Task {
     public Map<String, Object> getContent() { return content; }
 
     public void setContent(Map<String, Object> content) { this.content = content; }
+
+    public Long getLessonId() { return lessonId; }
+
+    public void setLessonId(Long lessonId) { this.lessonId = lessonId; }
+
+    public int getOrderIndex() { return orderIndex; }
+
+    public void setOrderIndex(int orderIndex) { this.orderIndex = orderIndex; }
 
     public Long getPromptTemplateId() { return promptTemplateId; }
 
