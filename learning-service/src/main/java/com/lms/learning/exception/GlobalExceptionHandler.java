@@ -9,9 +9,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.lms.learning.exception.TaskLockedException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(TaskLockedException.class)
+    public ResponseEntity<ApiError> taskLocked(TaskLockedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ApiError("TASK_LOCKED", ex.getMessage(), rid()));
+    }
 
     @ExceptionHandler(ApiBusinessException.class)
     public ResponseEntity<ApiError> business(ApiBusinessException ex) {

@@ -29,6 +29,7 @@ public class LearningService {
     private final TaskResultRepository taskResultRepository;
     private final TaskCheckerFactory checkerFactory;
     private final AccessCheckService accessCheckService;
+    private final UnlockEnforcementService unlockEnforcementService;
     private final ObjectMapper objectMapper;
     private final TaskResultMapper mapper;
 
@@ -36,12 +37,14 @@ public class LearningService {
             TaskResultRepository taskResultRepository,
             TaskCheckerFactory checkerFactory,
             AccessCheckService accessCheckService,
+            UnlockEnforcementService unlockEnforcementService,
             ObjectMapper objectMapper,
             TaskResultMapper mapper) {
         this.taskRepository = taskRepository;
         this.taskResultRepository = taskResultRepository;
         this.checkerFactory = checkerFactory;
         this.accessCheckService = accessCheckService;
+        this.unlockEnforcementService = unlockEnforcementService;
         this.objectMapper = objectMapper;
         this.mapper = mapper;
     }
@@ -53,6 +56,8 @@ public class LearningService {
                 .orElseThrow(() -> ApiBusinessException.notFound("Task", taskId));
 
         accessCheckService.assertStudentHasAccess(studentId, taskId);
+
+        unlockEnforcementService.checkUnlock(taskId, studentId);
 
         Optional<TaskResult> existing = taskResultRepository.findByStudentIdAndTaskId(studentId, taskId);
         if (existing.isPresent() && existing.get().getStatus() == ResultStatus.VALIDATED_BY_TEACHER) {

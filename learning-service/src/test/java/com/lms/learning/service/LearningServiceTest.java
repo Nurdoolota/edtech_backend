@@ -17,10 +17,12 @@ import com.lms.learning.entity.Task;
 import com.lms.learning.entity.TaskResult;
 import com.lms.learning.entity.TaskType;
 import com.lms.learning.exception.ApiBusinessException;
+import com.lms.learning.exception.TaskLockedException;
 import com.lms.learning.repository.TaskRepository;
 import com.lms.learning.repository.TaskResultRepository;
 import com.lms.learning.service.checker.EvaluationResult;
 import com.lms.learning.service.checker.KeyBasedChecker;
+import com.lms.learning.service.UnlockEnforcementService;
 import com.lms.learning.service.checker.TaskCheckerFactory;
 import java.math.BigDecimal;
 import java.util.Map;
@@ -38,6 +40,7 @@ class LearningServiceTest {
     @Mock TaskResultRepository taskResultRepository;
     @Mock TaskCheckerFactory checkerFactory;
     @Mock AccessCheckService accessCheckService;
+    @Mock UnlockEnforcementService unlockEnforcementService;
     @Mock KeyBasedChecker keyBasedChecker;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -48,7 +51,7 @@ class LearningServiceTest {
     void setUp() {
         mapper = new TaskResultMapper(objectMapper);
         learningService = new LearningService(taskRepository, taskResultRepository,
-                checkerFactory, accessCheckService, objectMapper, mapper);
+                checkerFactory, accessCheckService, unlockEnforcementService, objectMapper, mapper);
     }
 
     @Test
@@ -94,6 +97,20 @@ class LearningServiceTest {
                         new SubmitAnswerRequest(objectMapper.readTree("[]"))))
                 .isInstanceOf(ApiBusinessException.class)
                 .hasMessageContaining("Access denied");
+    }
+
+    @Test
+    void submitAnswer_taskLocked_throws403() throws Exception {
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(fillBlanksTask()));
+        doNothing().when(accessCheckService).assertStudentHasAccess(10L, 1L);
+        doThrow(new TaskLockedException("locked_by_SEQUENTIAL"))
+                .when(unlockEnforcementService).checkUnlock(1L, 10L);
+
+        assertThatThrownBy(() ->
+                learningService.submitAnswer(1L, 10L,
+                        new SubmitAnswerRequest(objectMapper.readTree("[\"apple\"]"))))
+                .isInstanceOf(TaskLockedException.class)
+                .hasMessageContaining("locked_by_SEQUENTIAL");
     }
 
     @Test
