@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: learning-service
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 22MB
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/lms}
     username: ${DB_USERNAME:postgres}
@@ -25,6 +29,10 @@ ai-service:
 
 content-service:
   url: ${CONTENT_SERVICE_URL:http://localhost:8082}
+
+learning:
+  media:
+    storage-path: ${LEARNING_MEDIA_PATH:./data/student-media}
 
 management:
   endpoints:

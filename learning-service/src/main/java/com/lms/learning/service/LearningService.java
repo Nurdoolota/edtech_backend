@@ -82,6 +82,9 @@ public class LearningService {
         result.setAiFeedback(evaluation.feedback());
         result.setScore(effectiveScore(aiScore, result.getTeacherScore()));
         result.setStatus(ResultStatus.CHECKED);
+        if (request.mediaId() != null) {
+            result.setMediaId(request.mediaId());
+        }
 
         return mapper.toResponse(taskResultRepository.save(result));
     }
