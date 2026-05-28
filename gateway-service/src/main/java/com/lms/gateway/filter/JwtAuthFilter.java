@@ -71,10 +71,15 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui") || path.startsWith("/webjars")) {
             return true;
         }
+        if (HttpMethod.GET.equals(method)) {
+            return "/api/v1/ai/health".equals(path) || path.startsWith("/static/avatars/");
+        }
         if (HttpMethod.POST.equals(method)) {
             return "/api/v1/auth/register".equals(path)
                     || "/api/v1/auth/login".equals(path)
-                    || "/api/v1/auth/refresh".equals(path);
+                    || "/api/v1/auth/refresh".equals(path)
+                    || "/api/v1/auth/forgot-password".equals(path)
+                    || "/api/v1/auth/reset-password".equals(path);
         }
         return false;
     }
