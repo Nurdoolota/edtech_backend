@@ -3,6 +3,8 @@ package com.lms.content.controller;
 import com.lms.content.dto.PagedResponse;
 import com.lms.content.dto.group.AddStudentRequest;
 import com.lms.content.dto.group.AssignCourseRequest;
+import com.lms.content.dto.group.BulkAddStudentsRequest;
+import com.lms.content.dto.group.BulkAddStudentsResponse;
 import com.lms.content.dto.group.CreateGroupRequest;
 import com.lms.content.dto.group.GroupResponse;
 import com.lms.content.dto.group.UpdateGroupRequest;
@@ -76,6 +78,15 @@ public class GroupController {
             @AuthenticationPrincipal JwtUserPrincipal principal) {
         groupService.delete(id, principal);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{groupId}/students/bulk")
+    @Operation(summary = "Bulk-add students to group (owner TEACHER or ADMIN)")
+    public BulkAddStudentsResponse bulkAddStudents(
+            @PathVariable Long groupId,
+            @Valid @RequestBody BulkAddStudentsRequest req,
+            @AuthenticationPrincipal JwtUserPrincipal principal) {
+        return groupService.bulkAddStudents(groupId, req.studentIds(), principal);
     }
 
     @PostMapping("/{groupId}/students")

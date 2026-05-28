@@ -1,6 +1,7 @@
 package com.lms.content.service;
 
 import com.lms.content.dto.PagedResponse;
+import com.lms.content.dto.group.BulkAddStudentsResponse;
 import com.lms.content.dto.group.CreateGroupRequest;
 import com.lms.content.dto.group.GroupResponse;
 import com.lms.content.dto.group.UpdateGroupRequest;
@@ -14,8 +15,14 @@ import com.lms.content.repository.CourseRepository;
 import com.lms.content.repository.GroupCourseRepository;
 import com.lms.content.repository.GroupRepository;
 import com.lms.content.repository.UserGroupRepository;
+import com.lms.content.repository.UserSummaryRepository;
 import com.lms.content.security.JwtUserPrincipal;
 import com.lms.content.security.RoleName;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,19 +32,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class GroupService {
 
+    private static final int BULK_ADD_LIMIT = 200;
+
     private final GroupRepository groupRepository;
     private final UserGroupRepository userGroupRepository;
     private final GroupCourseRepository groupCourseRepository;
     private final CourseRepository courseRepository;
+    private final UserSummaryRepository userSummaryRepository;
     private final ContentMapper mapper;
 
     public GroupService(GroupRepository groupRepository, UserGroupRepository userGroupRepository,
             GroupCourseRepository groupCourseRepository, CourseRepository courseRepository,
-            ContentMapper mapper) {
+            UserSummaryRepository userSummaryRepository, ContentMapper mapper) {
         this.groupRepository = groupRepository;
         this.userGroupRepository = userGroupRepository;
         this.groupCourseRepository = groupCourseRepository;
         this.courseRepository = courseRepository;
+        this.userSummaryRepository = userSummaryRepository;
         this.mapper = mapper;
     }
 
@@ -127,6 +138,54 @@ public class GroupService {
             throw ApiBusinessException.notFound("GroupCourse", courseId);
         }
         groupCourseRepository.deleteById(key);
+    }
+
+    @Transactional
+    public BulkAddStudentsResponse bulkAddStudents(Long groupId, List<Long> studentIds,
+            JwtUserPrincipal principal) {
+        if (studentIds.size() > BULK_ADD_LIMIT) {
+            throw new ApiBusinessException("BAD_REQUEST", 400,
+                    "Bulk add is limited to 200 students per request");
+        }
+
+        Group group = loadGroup(groupId);
+        checkWriteAccess(group, principal);
+
+        // Deduplicate input while preserving insertion order
+        Set<Long> requested = new LinkedHashSet<>(studentIds);
+
+        // 1. Identify which IDs are active STUDENTs in the users table
+        Set<Long> activeStudents = new LinkedHashSet<>(
+                userSummaryRepository.findActiveStudentIds(requested));
+
+        // 2. IDs not returned from the DB → notFound
+        List<Long> notFound = requested.stream()
+                .filter(id -> !activeStudents.contains(id))
+                .collect(Collectors.toList());
+
+        // 3. Among active students, find who is already in the group
+        Set<Long> existingMemberIds = userGroupRepository.findAllByIdGroupId(groupId)
+                .stream()
+                .map(ug -> ug.getId().getUserId())
+                .collect(Collectors.toSet());
+
+        List<Long> alreadyInGroup = new ArrayList<>();
+        List<Long> toInsert = new ArrayList<>();
+
+        for (Long id : activeStudents) {
+            if (existingMemberIds.contains(id)) {
+                alreadyInGroup.add(id);
+            } else {
+                toInsert.add(id);
+            }
+        }
+
+        // 4. Insert new memberships
+        for (Long id : toInsert) {
+            userGroupRepository.save(new UserGroup(id, groupId));
+        }
+
+        return new BulkAddStudentsResponse(toInsert, alreadyInGroup, notFound);
     }
 
     private Group loadGroup(Long id) {

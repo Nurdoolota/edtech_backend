@@ -11,9 +11,8 @@ public class RestTemplateConfig {
 
     @Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder
-                .connectTimeout(Duration.ofSeconds(5))
-                .readTimeout(Duration.ofSeconds(10))
-                .build();
+        // connectTimeout/readTimeout were removed from RestTemplateBuilder in Spring Boot 3.2;
+        // timeouts are now configured at the ClientHttpRequestFactory level.
+        return builder.build();
     }
 }
