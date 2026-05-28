@@ -24,6 +24,10 @@ learning:
   service:
     url: ${LEARNING_SERVICE_URL:http://localhost:8083}
 
+ai:
+  service:
+    url: ${AI_SERVICE_URL:http://localhost:8084}
+
 management:
   endpoints:
     web:
