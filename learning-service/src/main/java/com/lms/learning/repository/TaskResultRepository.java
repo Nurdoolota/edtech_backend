@@ -1,6 +1,9 @@
 package com.lms.learning.repository;
 
 import com.lms.learning.entity.TaskResult;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,4 +25,14 @@ public interface TaskResultRepository extends JpaRepository<TaskResult, Long> {
             Pageable pageable);
 
     Page<TaskResult> findByTaskId(Long taskId, Pageable pageable);
+
+    List<TaskResult> findByTaskIdInAndStudentId(Collection<Long> taskIds, Long studentId);
+
+    long countByStudentId(Long studentId);
+
+    @Query("SELECT AVG(r.score) FROM TaskResult r WHERE r.studentId = :studentId")
+    Double findAverageScoreByStudentId(@Param("studentId") Long studentId);
+
+    @Query("SELECT MAX(r.createdAt) FROM TaskResult r WHERE r.studentId = :studentId")
+    Instant findLatestCreatedAtByStudentId(@Param("studentId") Long studentId);
 }
