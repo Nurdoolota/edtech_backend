@@ -12,6 +12,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByLessonId(Long lessonId);
 
+    List<Task> findByLessonIdOrderByOrderIndex(Long lessonId);
+
+    java.util.Optional<Task> findByIdAndLessonId(Long id, Long lessonId);
+
+    @Query("SELECT MAX(t.orderIndex) FROM Task t WHERE t.lessonId = :lessonId")
+    java.util.Optional<Integer> findMaxOrderIndexByLessonId(@Param("lessonId") Long lessonId);
+
     Page<Task> findAllByCourseId(Long courseId, Pageable pageable);
 
     /** Tasks for a specific course, visible to a student via group membership. */

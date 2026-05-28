@@ -1,6 +1,7 @@
 package com.lms.content.service;
 
 import com.lms.content.dto.block.BlockResponse;
+import com.lms.content.dto.task.TaskResponse;
 import com.lms.content.dto.lesson.GrantAccessRequest;
 import com.lms.content.dto.lesson.LessonAccessEntryResponse;
 import com.lms.content.dto.lesson.LessonAccessResponse;
@@ -224,12 +225,13 @@ public class LessonService {
 
     private LessonResponse toResponse(Lesson l) {
         int blocksCount = (int) lessonBlockRepository.countByLessonId(l.getId());
+        int tasksCount = taskRepository.findByLessonId(l.getId()).size();
         return new LessonResponse(
                 l.getId(), l.getCourseId(), l.getTopicId(),
                 l.getOrderIndex(), l.getGlobalOrder(),
                 l.getTitle(), l.getStatus(),
                 l.getPublishMode(), l.getUnlockMode(),
-                l.isVisible(), blocksCount, 0,
+                l.isVisible(), blocksCount, tasksCount,
                 l.getCreatedAt(), l.getPublishedAt());
     }
 
@@ -240,13 +242,24 @@ public class LessonService {
                 .map(b -> new BlockResponse(b.getId(), b.getLessonId(), b.getOrderIndex(),
                         b.getType(), b.getContentJson(), b.isAiGenerated(), b.getCreatedAt()))
                 .collect(Collectors.toList());
+        List<TaskResponse> tasks = taskRepository
+                .findByLessonIdOrderByOrderIndex(l.getId())
+                .stream()
+                .map(t -> new TaskResponse(
+                        t.getId(), t.getCourseId(), t.getLessonId(),
+                        t.getType(), t.getTitle(), t.getContent(),
+                        t.getStatus(), t.getOrderIndex(),
+                        t.getUnlockMode(), t.getPrerequisiteTaskId(), t.getRequiredScore(),
+                        t.isAiGenerated(), t.getPromptTemplateId(),
+                        t.getCreatedAt(), t.getUpdatedAt()))
+                .collect(Collectors.toList());
         return new LessonWithContentResponse(
                 l.getId(), l.getCourseId(), l.getTopicId(),
                 l.getOrderIndex(), l.getGlobalOrder(),
                 l.getTitle(), l.getStatus(),
                 l.getPublishMode(), l.getUnlockMode(),
-                l.isVisible(), blocks.size(), 0,
+                l.isVisible(), blocks.size(), tasks.size(),
                 l.getCreatedAt(), l.getPublishedAt(),
-                blocks, List.of());
+                blocks, tasks);
     }
 }

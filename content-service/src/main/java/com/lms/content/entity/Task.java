@@ -40,6 +40,27 @@ public class Task {
     @Column(name = "order_index", nullable = false)
     private int orderIndex = 0;
 
+    @Column(length = 500)
+    private String title;
+
+    @Column(nullable = false, length = 32)
+    private String status = "DRAFT";
+
+    @Column(name = "ai_generated", nullable = false)
+    private boolean aiGenerated = false;
+
+    @Column(name = "generation_metadata", columnDefinition = "jsonb")
+    private String generationMetadata;
+
+    @Column(name = "unlock_mode", nullable = false, length = 16)
+    private String unlockMode = "FREE";
+
+    @Column(name = "prerequisite_task_id")
+    private Long prerequisiteTaskId;
+
+    @Column(name = "required_score")
+    private Integer requiredScore;
+
     @Column(name = "prompt_template_id")
     private Long promptTemplateId;
 
@@ -74,6 +95,34 @@ public class Task {
     public int getOrderIndex() { return orderIndex; }
 
     public void setOrderIndex(int orderIndex) { this.orderIndex = orderIndex; }
+
+    public String getTitle() { return title; }
+
+    public void setTitle(String title) { this.title = title; }
+
+    public String getStatus() { return status; }
+
+    public void setStatus(String status) { this.status = status; }
+
+    public boolean isAiGenerated() { return aiGenerated; }
+
+    public void setAiGenerated(boolean aiGenerated) { this.aiGenerated = aiGenerated; }
+
+    public String getGenerationMetadata() { return generationMetadata; }
+
+    public void setGenerationMetadata(String generationMetadata) { this.generationMetadata = generationMetadata; }
+
+    public String getUnlockMode() { return unlockMode; }
+
+    public void setUnlockMode(String unlockMode) { this.unlockMode = unlockMode; }
+
+    public Long getPrerequisiteTaskId() { return prerequisiteTaskId; }
+
+    public void setPrerequisiteTaskId(Long prerequisiteTaskId) { this.prerequisiteTaskId = prerequisiteTaskId; }
+
+    public Integer getRequiredScore() { return requiredScore; }
+
+    public void setRequiredScore(Integer requiredScore) { this.requiredScore = requiredScore; }
 
     public Long getPromptTemplateId() { return promptTemplateId; }
 

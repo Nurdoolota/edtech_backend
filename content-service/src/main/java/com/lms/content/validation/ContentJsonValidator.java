@@ -45,6 +45,21 @@ public class ContentJsonValidator {
                 requireString(content, "topic", type);
                 requireString(content, "botRole", type);
             }
+            case LISTENING -> {
+                requireString(content, "audioUrl", type);
+                requireArray(content, "questions", type);
+            }
+            case SPEAKING -> {
+                requireString(content, "prompt", type);
+            }
+            case READING_COMPREHENSION -> {
+                requireString(content, "sourceText", type);
+                requireArray(content, "questions", type);
+            }
+            case IMAGE_DESCRIPTION -> {
+                requireString(content, "imageUrl", type);
+                requireString(content, "prompt", type);
+            }
         }
     }
 

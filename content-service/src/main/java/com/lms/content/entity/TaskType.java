@@ -6,5 +6,9 @@ public enum TaskType {
     VIDEO,
     TEXT,
     TRANSLATION,
-    DEBATES
+    DEBATES,
+    LISTENING,
+    SPEAKING,
+    READING_COMPREHENSION,
+    IMAGE_DESCRIPTION
 }

@@ -17,8 +17,13 @@ public class ContentMapper {
     }
 
     public TaskResponse toTaskResponse(Task t) {
-        return new TaskResponse(t.getId(), t.getCourseId(), t.getType(), t.getContent(),
-                t.getPromptTemplateId(), t.getCreatedAt(), t.getUpdatedAt());
+        return new TaskResponse(
+                t.getId(), t.getCourseId(), t.getLessonId(),
+                t.getType(), t.getTitle(), t.getContent(),
+                t.getStatus(), t.getOrderIndex(),
+                t.getUnlockMode(), t.getPrerequisiteTaskId(), t.getRequiredScore(),
+                t.isAiGenerated(), t.getPromptTemplateId(),
+                t.getCreatedAt(), t.getUpdatedAt());
     }
 
     public GroupResponse toGroupResponse(Group g) {

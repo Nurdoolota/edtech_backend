@@ -75,4 +75,5 @@ public class TaskController {
         taskService.delete(id, principal);
         return ResponseEntity.noContent().build();
     }
+
 }

@@ -9,7 +9,10 @@ import com.lms.content.dto.lesson.LessonWithContentResponse;
 import com.lms.content.dto.lesson.PublishRequest;
 import com.lms.content.dto.lesson.TaskOrderResponse;
 import com.lms.content.dto.lesson.TaskReorderRequest;
+import com.lms.content.dto.task.LessonTaskRequest;
+import com.lms.content.dto.task.TaskResponse;
 import com.lms.content.service.LessonService;
+import com.lms.content.service.TaskService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -29,9 +32,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class LessonController {
 
     private final LessonService lessonService;
+    private final TaskService taskService;
 
-    public LessonController(LessonService lessonService) {
+    public LessonController(LessonService lessonService, TaskService taskService) {
         this.lessonService = lessonService;
+        this.taskService = taskService;
     }
 
     @GetMapping("/courses/{courseId}/lessons")
@@ -131,5 +136,23 @@ public class LessonController {
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role) {
         return ResponseEntity.ok(lessonService.listAccess(id, userId, role));
+    }
+
+    @GetMapping("/lessons/{lessonId}/tasks")
+    public ResponseEntity<List<TaskResponse>> listTasksByLesson(
+            @PathVariable Long lessonId,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role) {
+        return ResponseEntity.ok(taskService.listByLesson(lessonId, userId, role));
+    }
+
+    @PostMapping("/lessons/{lessonId}/tasks")
+    public ResponseEntity<TaskResponse> createTaskInLesson(
+            @PathVariable Long lessonId,
+            @Valid @RequestBody LessonTaskRequest req,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(taskService.createInLesson(lessonId, req, userId, role));
     }
 }
