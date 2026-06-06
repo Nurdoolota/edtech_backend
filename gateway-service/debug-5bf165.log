@@ -1,0 +1,2 @@
+{"sessionId":"5bf165","hypothesisId":"H-A","location":"CorrelationIdFilter.java:44","message":"then() callback fired","data":{"committed":true,"requestId":"fe4c705b-0da9-42ef-a686-ca23afb2b655"},"timestamp":1780773288769}
+{"sessionId":"5bf165","hypothesisId":"H-A","location":"CorrelationIdFilter.java:53","message":"headers.set threw: UnsupportedOperationException","data":{"exception":"null"},"timestamp":1780773288774}
