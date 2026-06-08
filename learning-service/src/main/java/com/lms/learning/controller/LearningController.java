@@ -1,6 +1,7 @@
 package com.lms.learning.controller;
 
 import com.lms.learning.dto.PagedResponse;
+import com.lms.learning.entity.ResultStatus;
 import com.lms.learning.dto.SubmitAnswerRequest;
 import com.lms.learning.dto.TaskResultResponse;
 import com.lms.learning.dto.ValidateResultRequest;
@@ -51,13 +52,16 @@ public class LearningController {
     @Operation(summary = "Get the authenticated student's result history")
     public ResponseEntity<PagedResponse<TaskResultResponse>> myResults(
             @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Long taskId,
+            @RequestParam(required = false) ResultStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal JwtUserPrincipal principal) {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return ResponseEntity.ok(
-                learningService.getMyResults(principal.getUserId(), courseId, pageable));
+                learningService.getMyResults(principal.getUserId(), courseId, taskId, status, pageable));
     }
+
 
     @GetMapping("/tasks/{taskId}/results")
     @PreAuthorize("hasRole('TEACHER')")

@@ -131,11 +131,28 @@ public class LearningService {
 
     @Transactional(readOnly = true)
     public PagedResponse<TaskResultResponse> getMyResults(Long studentId, Long courseId,
-            Pageable pageable) {
-        Page<TaskResult> page = courseId != null
-                ? taskResultRepository.findByStudentIdAndCourseId(studentId, courseId, pageable)
-                : taskResultRepository.findByStudentId(studentId, pageable);
+            Long taskId, ResultStatus status, Pageable pageable) {
+        Page<TaskResult> page;
+        if (courseId != null && status != null) {
+            page = taskResultRepository.findByStudentIdAndCourseIdAndStatus(studentId, courseId, status, pageable);
+        } else if (courseId != null && taskId != null) {
+            page = taskResultRepository.findByStudentIdAndCourseIdAndTaskId(studentId, courseId, taskId, pageable);
+        } else if (taskId != null) {
+            page = taskResultRepository.findByStudentIdAndTaskId(studentId, taskId, pageable);
+        } else if (courseId != null) {
+            page = taskResultRepository.findByStudentIdAndCourseId(studentId, courseId, pageable);
+        } else if (status != null) {
+            page = taskResultRepository.findByStudentIdAndStatus(studentId, status, pageable);
+        } else {
+            page = taskResultRepository.findByStudentId(studentId, pageable);
+        }
         return toPagedResponse(page);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<TaskResultResponse> getMyResults(Long studentId, Long courseId,
+            Pageable pageable) {
+        return getMyResults(studentId, courseId, null, null, pageable);
     }
 
     @Transactional(readOnly = true)

@@ -84,7 +84,7 @@ class LearningControllerTest {
 
     @Test
     void myResults_asStudent_returns200() throws Exception {
-        when(learningService.getMyResults(eq(USER_ID), any(), any()))
+        when(learningService.getMyResults(eq(USER_ID), any(), any(), any(), any()))
                 .thenReturn(new PagedResponse<>(List.of(sampleResponse()), 1L, 1));
 
         mockMvc.perform(get("/api/v1/learning/my-results").with(asJwtUser(RoleName.STUDENT)))
