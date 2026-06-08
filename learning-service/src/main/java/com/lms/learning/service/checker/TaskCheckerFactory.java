@@ -18,6 +18,10 @@ public class TaskCheckerFactory {
         checkers.put(TaskType.TRANSLATION, aiBasedChecker);
         checkers.put(TaskType.VIDEO, aiBasedChecker);
         checkers.put(TaskType.DEBATES, aiBasedChecker);
+        checkers.put(TaskType.READING_COMPREHENSION, aiBasedChecker);
+        checkers.put(TaskType.IMAGE_DESCRIPTION, aiBasedChecker);
+        // LISTENING and SPEAKING use manual-review flow — no checker registered.
+        // LearningService.submitAnswer short-circuits for those types before calling getChecker.
     }
 
     public TaskChecker getChecker(TaskType type) {

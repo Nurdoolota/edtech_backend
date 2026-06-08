@@ -18,8 +18,9 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
 /**
- * Evaluates TEXT, TRANSLATION, VIDEO, DEBATES tasks by delegating to AI Service.
- * Temperature: 0.2 for TEXT/TRANSLATION/VIDEO, 0.8 for DEBATES (configurable via task content).
+ * Evaluates TEXT, TRANSLATION, VIDEO, DEBATES, READING_COMPREHENSION, IMAGE_DESCRIPTION tasks
+ * by delegating to AI Service.
+ * Temperature: 0.2 for most types, 0.8 for DEBATES (configurable via task content).
  */
 @Component
 public class AiBasedChecker implements TaskChecker {
@@ -87,6 +88,8 @@ public class AiBasedChecker implements TaskChecker {
             case TRANSLATION -> "translation_evaluation";
             case VIDEO -> "video_evaluation";
             case DEBATES -> "debates_evaluation";
+            case READING_COMPREHENSION -> "reading_comprehension_evaluation";
+            case IMAGE_DESCRIPTION -> "image_description_evaluation";
             default -> throw ApiBusinessException.badRequest(
                     "Unsupported task type for AI-based checking: " + task.getType());
         };

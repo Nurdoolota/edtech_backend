@@ -1,14 +1,17 @@
 package com.lms.learning.dto;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import jakarta.validation.constraints.NotNull;
 
 public record SubmitAnswerRequest(
-        @NotNull(message = "answer_content is required")
         JsonNode answerContent,
-        String mediaId) {
+        String mediaId,
+        String transcript) {
 
     public SubmitAnswerRequest(JsonNode answerContent) {
-        this(answerContent, null);
+        this(answerContent, null, null);
+    }
+
+    public SubmitAnswerRequest(JsonNode answerContent, String mediaId) {
+        this(answerContent, mediaId, null);
     }
 }

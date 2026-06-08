@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -139,6 +140,67 @@ class LearningServiceTest {
 
         assertThat(response.status()).isEqualTo(ResultStatus.VALIDATED_BY_TEACHER);
         assertThat(response.score()).isEqualByComparingTo(BigDecimal.valueOf(95));
+    }
+
+    @Test
+    void submitAnswer_speakingTask_savesSubmittedWithoutChecker() throws Exception {
+        Task task = audioTask(TaskType.SPEAKING);
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        doNothing().when(accessCheckService).assertStudentHasAccess(10L, 1L);
+        when(taskResultRepository.findByStudentIdAndTaskId(10L, 1L)).thenReturn(Optional.empty());
+
+        TaskResult saved = resultWith(ResultStatus.SUBMITTED, BigDecimal.ZERO);
+        when(taskResultRepository.save(any())).thenReturn(saved);
+
+        TaskResultResponse response = learningService.submitAnswer(1L, 10L,
+                new SubmitAnswerRequest(null, "media-123", "my transcript"));
+
+        assertThat(response.status()).isEqualTo(ResultStatus.SUBMITTED);
+        verify(checkerFactory, never()).getChecker(any());
+    }
+
+    @Test
+    void submitAnswer_listeningTask_savesSubmittedWithoutChecker() throws Exception {
+        Task task = audioTask(TaskType.LISTENING);
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        doNothing().when(accessCheckService).assertStudentHasAccess(10L, 1L);
+        when(taskResultRepository.findByStudentIdAndTaskId(10L, 1L)).thenReturn(Optional.empty());
+
+        TaskResult saved = resultWith(ResultStatus.SUBMITTED, BigDecimal.ZERO);
+        when(taskResultRepository.save(any())).thenReturn(saved);
+
+        TaskResultResponse response = learningService.submitAnswer(1L, 10L,
+                new SubmitAnswerRequest(null, null, null));
+
+        assertThat(response.status()).isEqualTo(ResultStatus.SUBMITTED);
+        verify(checkerFactory, never()).getChecker(any());
+    }
+
+    @Test
+    void submitAnswer_readingComprehensionTask_callsAiChecker() throws Exception {
+        Task task = audioTask(TaskType.READING_COMPREHENSION);
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+        doNothing().when(accessCheckService).assertStudentHasAccess(10L, 1L);
+        when(taskResultRepository.findByStudentIdAndTaskId(10L, 1L)).thenReturn(Optional.empty());
+        when(checkerFactory.getChecker(TaskType.READING_COMPREHENSION)).thenReturn(keyBasedChecker);
+        when(keyBasedChecker.check(any(), any()))
+                .thenReturn(new EvaluationResult(BigDecimal.valueOf(80), "Good", null));
+
+        TaskResult saved = resultWith(ResultStatus.CHECKED, BigDecimal.valueOf(80));
+        when(taskResultRepository.save(any())).thenReturn(saved);
+
+        TaskResultResponse response = learningService.submitAnswer(1L, 10L,
+                new SubmitAnswerRequest(objectMapper.readTree("\"some text\"")));
+
+        assertThat(response.status()).isEqualTo(ResultStatus.CHECKED);
+    }
+
+    private Task audioTask(TaskType type) {
+        return new Task() {
+            @Override public Long getId() { return 1L; }
+            @Override public TaskType getType() { return type; }
+            @Override public java.util.Map<String, Object> getContent() { return java.util.Map.of(); }
+        };
     }
 
     private Task fillBlanksTask() {

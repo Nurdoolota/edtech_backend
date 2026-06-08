@@ -74,6 +74,56 @@ class AiBasedCheckerTest {
                 .hasMessageContaining("temporarily unavailable");
     }
 
+    @Test
+    void check_readingComprehensionTask_usesCorrectPromptCode() {
+        AiEvaluateResponse aiResponse = new AiEvaluateResponse(
+                java.math.BigDecimal.valueOf(75), "Well explained.", "OK");
+
+        RestClient restClient = mock(RestClient.class);
+        RequestBodyUriSpec uriSpec = mock(RequestBodyUriSpec.class);
+        RequestBodySpec bodySpec = mock(RequestBodySpec.class);
+        ResponseSpec responseSpec = mock(ResponseSpec.class);
+
+        when(restClient.post()).thenReturn(uriSpec);
+        when(uriSpec.uri(anyString())).thenReturn(bodySpec);
+        when(bodySpec.contentType(any(MediaType.class))).thenReturn(bodySpec);
+        when(bodySpec.body(any(AiEvaluateRequest.class))).thenReturn(bodySpec);
+        when(bodySpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.body(eq(AiEvaluateResponse.class))).thenReturn(aiResponse);
+
+        AiBasedChecker checker = new AiBasedChecker(restClient, new ObjectMapper());
+        Task task = taskWith(TaskType.READING_COMPREHENSION, Map.of(
+                "text", "Some article", "questions", java.util.List.of("Q1?")));
+
+        EvaluationResult result = checker.check(task, "My answer");
+        assertThat(result.score()).isEqualByComparingTo(java.math.BigDecimal.valueOf(75));
+    }
+
+    @Test
+    void check_imageDescriptionTask_usesCorrectPromptCode() {
+        AiEvaluateResponse aiResponse = new AiEvaluateResponse(
+                java.math.BigDecimal.valueOf(90), "Great description.", "OK");
+
+        RestClient restClient = mock(RestClient.class);
+        RequestBodyUriSpec uriSpec = mock(RequestBodyUriSpec.class);
+        RequestBodySpec bodySpec = mock(RequestBodySpec.class);
+        ResponseSpec responseSpec = mock(ResponseSpec.class);
+
+        when(restClient.post()).thenReturn(uriSpec);
+        when(uriSpec.uri(anyString())).thenReturn(bodySpec);
+        when(bodySpec.contentType(any(MediaType.class))).thenReturn(bodySpec);
+        when(bodySpec.body(any(AiEvaluateRequest.class))).thenReturn(bodySpec);
+        when(bodySpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.body(eq(AiEvaluateResponse.class))).thenReturn(aiResponse);
+
+        AiBasedChecker checker = new AiBasedChecker(restClient, new ObjectMapper());
+        Task task = taskWith(TaskType.IMAGE_DESCRIPTION, Map.of(
+                "imageUrl", "https://example.com/img.jpg"));
+
+        EvaluationResult result = checker.check(task, "I see a cat.");
+        assertThat(result.score()).isEqualByComparingTo(java.math.BigDecimal.valueOf(90));
+    }
+
     private Task taskWith(TaskType type, Map<String, Object> content) {
         return new Task() {
             @Override

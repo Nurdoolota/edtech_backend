@@ -9,6 +9,7 @@ import com.lms.learning.dto.TaskResultResponse;
 import com.lms.learning.dto.ValidateResultRequest;
 import com.lms.learning.entity.ResultStatus;
 import com.lms.learning.entity.Task;
+import com.lms.learning.entity.TaskType;
 import com.lms.learning.entity.TaskResult;
 import com.lms.learning.exception.ApiBusinessException;
 import com.lms.learning.repository.TaskRepository;
@@ -17,6 +18,7 @@ import com.lms.learning.service.checker.EvaluationResult;
 import com.lms.learning.service.checker.TaskCheckerFactory;
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class LearningService {
+
+
+    /** Task types that require manual review; checker is never invoked for these. */
+    private static final Set<TaskType> MANUAL_REVIEW_TYPES = Set.of(
+            TaskType.SPEAKING, TaskType.LISTENING);
 
     private final TaskRepository taskRepository;
     private final TaskResultRepository taskResultRepository;
@@ -65,25 +72,41 @@ public class LearningService {
                     "This task has already been validated by a teacher and cannot be resubmitted.");
         }
 
-        validateAnswerContent(request.answerContent());
-        String answerJson = writeAnswerJson(request.answerContent());
-
-        EvaluationResult evaluation = checkerFactory.getChecker(task.getType())
-                .check(task, answerJson);
-
-        int aiScore = clampToInt(evaluation.score());
-
         TaskResult result = existing.orElseGet(TaskResult::new);
         result.setTaskId(taskId);
         result.setStudentId(studentId);
-        result.setAnswerContent(request.answerContent());
-        result.setAiScore(aiScore);
-        result.setAiBreakdown(evaluation.aiBreakdown());
-        result.setAiFeedback(evaluation.feedback());
-        result.setScore(effectiveScore(aiScore, result.getTeacherScore()));
-        result.setStatus(ResultStatus.CHECKED);
-        if (request.mediaId() != null) {
+
+        if (MANUAL_REVIEW_TYPES.contains(task.getType())) {
+            // Audio tasks: store submission for manual teacher review, no automated checking.
+            result.setAnswerContent(request.answerContent() != null
+                    ? request.answerContent()
+                    : objectMapper.nullNode());
             result.setMediaId(request.mediaId());
+            result.setTranscript(request.transcript());
+            result.setAiScore(0);
+            result.setScore(BigDecimal.ZERO);
+            result.setStatus(ResultStatus.SUBMITTED);
+        } else {
+            validateAnswerContent(request.answerContent());
+            String answerJson = writeAnswerJson(request.answerContent());
+
+            EvaluationResult evaluation = checkerFactory.getChecker(task.getType())
+                    .check(task, answerJson);
+
+            int aiScore = clampToInt(evaluation.score());
+
+            result.setAnswerContent(request.answerContent());
+            result.setAiScore(aiScore);
+            result.setAiBreakdown(evaluation.aiBreakdown());
+            result.setAiFeedback(evaluation.feedback());
+            result.setScore(effectiveScore(aiScore, result.getTeacherScore()));
+            result.setStatus(ResultStatus.CHECKED);
+            if (request.mediaId() != null) {
+                result.setMediaId(request.mediaId());
+            }
+            if (request.transcript() != null) {
+                result.setTranscript(request.transcript());
+            }
         }
 
         return mapper.toResponse(taskResultRepository.save(result));
