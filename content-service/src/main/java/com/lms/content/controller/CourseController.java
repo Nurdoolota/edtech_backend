@@ -1,29 +1,36 @@
 package com.lms.content.controller;
 
 import com.lms.content.dto.PagedResponse;
+import com.lms.content.dto.ReorderRequest;
+import com.lms.content.dto.course.CourseItemReorderRequest;
 import com.lms.content.dto.course.CourseResponse;
 import com.lms.content.dto.course.CourseStatsResponse;
 import com.lms.content.dto.course.CourseTreeResponse;
 import com.lms.content.dto.course.CreateCourseRequest;
 import com.lms.content.dto.course.UpdateCourseRequest;
+import com.lms.content.dto.lesson.LessonResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import com.lms.content.security.JwtUserPrincipal;
+import com.lms.content.service.CourseItemsReorderService;
 import com.lms.content.service.CourseService;
 import com.lms.content.service.CourseStatsService;
 import com.lms.content.service.CourseTreeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,13 +42,16 @@ public class CourseController {
     private final CourseService courseService;
     private final CourseTreeService courseTreeService;
     private final CourseStatsService courseStatsService;
+    private final CourseItemsReorderService courseItemsReorderService;
 
     public CourseController(CourseService courseService,
             CourseTreeService courseTreeService,
-            CourseStatsService courseStatsService) {
+            CourseStatsService courseStatsService,
+            CourseItemsReorderService courseItemsReorderService) {
         this.courseService = courseService;
         this.courseTreeService = courseTreeService;
         this.courseStatsService = courseStatsService;
+        this.courseItemsReorderService = courseItemsReorderService;
     }
 
     @GetMapping
@@ -100,6 +110,27 @@ public class CourseController {
             @PathVariable Long id,
             @AuthenticationPrincipal JwtUserPrincipal principal) {
         return courseStatsService.getStats(id, principal);
+    }
+
+    @PatchMapping("/{id}/items/reorder")
+    @Operation(summary = "Reorder mixed topics and standalone lessons (sets global_order)")
+    public ResponseEntity<Void> reorderItems(
+            @PathVariable Long id,
+            @Valid @RequestBody CourseItemReorderRequest req,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role) {
+        courseItemsReorderService.reorderItems(id, req, userId, role);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/lessons/reorder")
+    @Operation(summary = "Reorder standalone lessons within a course")
+    public ResponseEntity<List<LessonResponse>> reorderLessons(
+            @PathVariable Long id,
+            @Valid @RequestBody ReorderRequest req,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role) {
+        return ResponseEntity.ok(courseItemsReorderService.reorderCourseLessons(id, req.order(), userId, role));
     }
 
 }

@@ -1,9 +1,11 @@
 package com.lms.content.controller;
 
 import com.lms.content.dto.ReorderRequest;
+import com.lms.content.dto.lesson.LessonResponse;
 import com.lms.content.dto.topic.TopicRequest;
 import com.lms.content.dto.topic.TopicResponse;
 import com.lms.content.dto.topic.TopicWithLessonsResponse;
+import com.lms.content.service.CourseItemsReorderService;
 import com.lms.content.service.TopicService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,9 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class TopicController {
 
     private final TopicService topicService;
+    private final CourseItemsReorderService courseItemsReorderService;
 
-    public TopicController(TopicService topicService) {
+    public TopicController(TopicService topicService,
+            CourseItemsReorderService courseItemsReorderService) {
         this.topicService = topicService;
+        this.courseItemsReorderService = courseItemsReorderService;
     }
 
     @GetMapping("/courses/{courseId}/topics")
@@ -88,5 +93,14 @@ public class TopicController {
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role) {
         return ResponseEntity.ok(topicService.reorder(courseId, request.order(), userId, role));
+    }
+
+    @PatchMapping("/topics/{topicId}/lessons/reorder")
+    public ResponseEntity<List<LessonResponse>> reorderLessons(
+            @PathVariable Long topicId,
+            @Valid @RequestBody ReorderRequest request,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role) {
+        return ResponseEntity.ok(courseItemsReorderService.reorderTopicLessons(topicId, request.order(), userId, role));
     }
 }
